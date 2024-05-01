@@ -1,0 +1,121 @@
+/* .header {
+    background-color: #8770FD;
+    padding-left: 0.5em;
+    margin: 0 auto;
+} */
+
+/* .oddRow {
+    background: linear-gradient(0deg, #E7E2FF, #E7E2FF), linear-gradient(0deg, #EBE8E8, #EBE8E8);
+    color: #E7E2FF;
+}
+
+.evenRow {
+    color: #EBE8E8;
+
+}
+
+.companyInfor {
+    display: grid;
+    grid-template-areas: "a a a a" "b c c c";
+    gap: 30px;
+    width: 640px;
+    margin-left: 1em;
+    margin-right: 1em;
+    background-color: #EBE8E8;
+    padding: 1em;
+}
+
+.flex-item {
+    display: flex;
+    align-items: center;
+
+} */
+
+.MuiChartsLegend-root.MuiChartsLegend-row.css-1u0lry5-MuiChartsLegend-root {
+    display: none;
+}
+
+.MuiChartsAxis-root.MuiChartsAxis-directionY.MuiChartsAxis-left.css-1k2u9zb-MuiChartsAxis-root {
+    display: none;
+}
+
+.MuiChartsAxis-root.MuiChartsAxis-directionX.MuiChartsAxis-bottom.css-1k2u9zb-MuiChartsAxis-root {
+    display: none;
+}
+
+ul li {
+    list-style-type: none;
+}
+
+/* 
+.MuiPaper-root.MuiPaper-elevation.MuiPaper-rounded.MuiPaper-elevation24.MuiDialog-paper.MuiDialog-paperScrollPaper.MuiDialog-paperWidthSm.css-1t1j96h-MuiPaper-root-MuiDialog-paper {
+    width: 100%;
+} */
+
+a {
+    text-decoration: none;
+}
+
+.css-1eed5fa-MuiInputBase-root-MuiInput-root::before {
+    border-bottom: none !important;
+}
+
+
+.ellipsis-container {
+    position: relative;
+}
+
+.ellipsis {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    max-width: 6%;
+}
+
+.see-more-button {
+    display: none;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    color: blue;
+}
+
+.ellipsis-container:hover .see-more-button {
+    display: inline-block;
+}
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.5);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.overlay {
+    position: relative;
+}
+
+.overlay::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1;
+}
+
+.overlay>div {
+    position: relative;
+    z-index: 2;
+}
