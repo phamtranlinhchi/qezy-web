@@ -21,82 +21,79 @@ const NavBar = () => {
     ? window.location.pathname.split('/')[1]
     : 'home';
   const [value, setValue] = React.useState(currPage);
-  const { accounts } = useMsal();
   const { role } = UserInformation();
 
-  if (accounts.length > 0)
-    return (
+  return (
+    <Box
+      sx={{ backgroundColor: '#FFFFFF', width: '100%', maxHeight: '60px' }}
+      position={'sticky'}
+      display={'flex'}
+      zIndex={1}
+      borderBottom="1px solid #E9EAE0"
+      top={0}
+    >
       <Box
-        sx={{ backgroundColor: '#FFFFFF', width: '100%', maxHeight: '60px' }}
-        position={'sticky'}
+        width="10%"
         display={'flex'}
-        zIndex={1}
-        borderBottom="1px solid #E9EAE0"
-        top={0}
+        alignItems={'center'}
+        justifyContent="flex-start"
+        ml={4}
       >
-        <Box
-          width="10%"
-          display={'flex'}
-          alignItems={'center'}
-          justifyContent="flex-start"
-          ml={4}
-        >
-          <img
-            src="../public/assets/images/draphonyLogo.png"
-            alt=""
-            style={{ height: '80%' }}
-          ></img>
-        </Box>
-        <Box width="65%" display={'flex'} alignItems={'center'}>
-          <BottomNavigation
-            sx={{
-              display: 'flex',
-              justifyContent: 'center',
-              gap: '20px',
-            }}
-            showLabels
-            value={value}
-            onChange={(_event, newValue) => {
-              setValue(newValue);
-            }}
-          >
-            <BottomNavigationAction
-              label="Opps"
-              value="home"
-              icon={<ListAltIcon />}
-              component={Link}
-              to="/"
-            />
-            {role === 'ZMI.GlobalAdmin' && (
-              <BottomNavigation
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  gap: '20px',
-                }}
-                showLabels
-                value={value}
-                onChange={(event, newValue) => {
-                  setValue(newValue);
-                }}
-              >
-                <BottomNavigationAction
-                  label="Permissions"
-                  value="permissions"
-                  icon={<RecentActorsRoundedIcon />}
-                  component={Link}
-                  to="/permissions"
-                />
-              </BottomNavigation>
-            )}
-          </BottomNavigation>
-        </Box>
-        <Box width="25%" display={'flex'} justifyContent={'flex-end'}>
-          <MicrosoftAuth type="signout" />
-        </Box>
+        <img
+          src="../public/assets/images/draphonyLogo.png"
+          alt=""
+          style={{ height: '80%' }}
+        ></img>
       </Box>
-    );
-  return <></>;
+      <Box width="65%" display={'flex'} alignItems={'center'}>
+        <BottomNavigation
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '20px',
+          }}
+          showLabels
+          value={value}
+          onChange={(_event, newValue) => {
+            setValue(newValue);
+          }}
+        >
+          <BottomNavigationAction
+            label="Opps"
+            value="home"
+            icon={<ListAltIcon />}
+            component={Link}
+            to="/"
+          />
+          {role === 'ZMI.GlobalAdmin' && (
+            <BottomNavigation
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '20px',
+              }}
+              showLabels
+              value={value}
+              onChange={(event, newValue) => {
+                setValue(newValue);
+              }}
+            >
+              <BottomNavigationAction
+                label="Permissions"
+                value="permissions"
+                icon={<RecentActorsRoundedIcon />}
+                component={Link}
+                to="/permissions"
+              />
+            </BottomNavigation>
+          )}
+        </BottomNavigation>
+      </Box>
+      <Box width="25%" display={'flex'} justifyContent={'flex-end'}>
+        <MicrosoftAuth type="signout" />
+      </Box>
+    </Box>
+  );
 };
 
 export default NavBar;

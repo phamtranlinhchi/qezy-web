@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { useMsal } from "@azure/msal-react";
 import { RedirectRequest } from "@azure/msal-browser";
-import { loginRequest } from "../helpers/azureConfig";
 import { Avatar, Box, Button, ClickAwayListener, Paper, Popper } from "@mui/material";
+import Cookies from "js-cookie";
+
+import { loginRequest } from "../helpers/azureConfig";
 import UserInformation from "./Logout/UserInformation";
 import Logout from "./Logout/Logout";
+import { useNavigate } from "react-router-dom";
 
 const MicrosoftAuth = (props: { type: string }) => {
     const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
@@ -14,6 +17,8 @@ const MicrosoftAuth = (props: { type: string }) => {
     const { instance } = useMsal();
     const { avatarUrl } = UserInformation();
 
+    const navigate = useNavigate()
+
     const handleLogin = (loginType: "redirect") => {
         if (loginType === "redirect") {
             instance.loginRedirect(loginRequest as RedirectRequest).catch(() => { });
@@ -21,7 +26,9 @@ const MicrosoftAuth = (props: { type: string }) => {
     };
 
     const handleLogout = () => {
-        instance.logout();
+        // instance.logout();
+        Cookies.remove('access_token')
+        navigate("/welcome")
     };
 
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {

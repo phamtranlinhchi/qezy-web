@@ -20,6 +20,8 @@ const Welcome = () => {
   const [password, setPassword] = useState("");
   const [errMsg, setErrMsg] = useState("");
   const navigate = useNavigate()
+  const accessToken = Cookies.get('access_token');
+
 
   const handleClickShowPassword = () => setShowPassword(show => !show);
 
@@ -50,98 +52,95 @@ const Welcome = () => {
 
   return (
     <>
-      <AuthenticatedTemplate>
-        <Navigate to="/" />
-      </AuthenticatedTemplate>
-      <UnauthenticatedTemplate>
-        <Box
-          sx={{
-            height: '90vh',
-            width: '100vw',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: 0,
-          }}
-        >
-          {/*  */}
-          <Box sx={{ textAlign: 'center', width: "30%" }}>
-            <h1
-              style={{
-                fontSize: '30px',
-                color: 'rgb(14,91,165)',
-                fontWeight: 'bold',
-                textAlign: 'center',
-              }}
-            >
-              Qezy
-            </h1>
-            <Box
-              component={"form"}
-              sx={{
-                mt: 3,
-              }}
-              onSubmit={handleLogin}>
-              <TextField
-                fullWidth
-                label='Username'
-                id='username'
-                name='username'
-                InputLabelProps={{ required: false }}
-                required
-                value={username}
-                onChange={handleChangeUsername}
-              />
-              <Box sx={{
-                mt: 2,
-                width: "100%",
-              }}>
-                <FormControl sx={{ width: '100%' }} variant="outlined">
-                  <InputLabel htmlFor="outlined-adornment-password">Password</InputLabel>
-                  <OutlinedInput
-                    id="outlined-adornment-password"
-                    type={showPassword ? 'text' : 'password'}
-                    endAdornment={
-                      <InputAdornment position="end">
-                        <IconButton
-                          aria-label="toggle password visibility"
-                          onClick={handleClickShowPassword}
-                          onMouseDown={handleMouseDownPassword}
-                          edge="end"
-                        >
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    }
-                    required
-                    label="Password"
-                    value={password}
-                    onChange={handleChangePassword}
-                  />
-                </FormControl>
-              </Box>
-              {
-                errMsg && <Box sx={{
+      {
+        accessToken ? <Navigate to="/" /> :
+          <Box
+            sx={{
+              height: '90vh',
+              width: '100vw',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: 0,
+            }}
+          >
+            {/*  */}
+            <Box sx={{ textAlign: 'center', width: "30%" }}>
+              <h1
+                style={{
+                  fontSize: '30px',
+                  color: 'rgb(14,91,165)',
+                  fontWeight: 'bold',
+                  textAlign: 'center',
+                }}
+              >
+                Qezy
+              </h1>
+              <Box
+                component={"form"}
+                sx={{
+                  mt: 3,
+                }}
+                onSubmit={handleLogin}>
+                <TextField
+                  fullWidth
+                  label='Username'
+                  id='username'
+                  name='username'
+                  InputLabelProps={{ required: false }}
+                  required
+                  value={username}
+                  onChange={handleChangeUsername}
+                />
+                <Box sx={{
                   mt: 2,
                   width: "100%",
-                  textAlign: "left",
-                  color: "red",
-                  marginLeft: "4px"
                 }}>
-                  {errMsg}
+                  <FormControl sx={{ width: '100%' }} variant="outlined">
+                    <InputLabel htmlFor="outlined-adornment-password">Password</InputLabel>
+                    <OutlinedInput
+                      id="outlined-adornment-password"
+                      type={showPassword ? 'text' : 'password'}
+                      endAdornment={
+                        <InputAdornment position="end">
+                          <IconButton
+                            aria-label="toggle password visibility"
+                            onClick={handleClickShowPassword}
+                            onMouseDown={handleMouseDownPassword}
+                            edge="end"
+                          >
+                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      }
+                      required
+                      label="Password"
+                      value={password}
+                      onChange={handleChangePassword}
+                    />
+                  </FormControl>
                 </Box>
-              }
-              {/* <MicrosoftAuth type="signin" /> */}
-              <Button type="submit" sx={{
-                mt: 3,
-              }}
-                color="primary"
-                variant="contained">LOGIN</Button>
+                {
+                  errMsg && <Box sx={{
+                    mt: 2,
+                    width: "100%",
+                    textAlign: "left",
+                    color: "red",
+                    marginLeft: "4px"
+                  }}>
+                    {errMsg}
+                  </Box>
+                }
+                {/* <MicrosoftAuth type="signin" /> */}
+                <Button type="submit" sx={{
+                  mt: 3,
+                }}
+                  color="primary"
+                  variant="contained">LOGIN</Button>
+              </Box>
             </Box>
-          </Box>
-        </Box >
-      </UnauthenticatedTemplate >
-
+          </Box >
+      }
     </>
   );
 };
