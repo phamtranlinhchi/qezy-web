@@ -1,50 +1,37 @@
 import axios, { AxiosError } from 'axios';
 import {
   apiOrigin,
-  JobType,
-  JobDetails,
-  TrainingDetails,
-  IOpp,
-  IContact,
-  ICompanyRow,
-  ITraining,
-  IJobRow,
-  companyDetails,
-  IUser,
 } from './constants';
 import { toast } from 'react-toastify';
 import { validateTags } from './handleData';
 
-interface IJobFilters {
-  miningDate?: string;
-  sourceUri?: string;
-  jobId?: string;
-  jobTitle?: string;
-  jobLocations?: string;
-  jobEmployment?: string;
-  jobDescription?: string;
-  jobRequirements?: string;
-  jobDepartment?: string;
-  jobBenefits?: string;
-  [key: string]: string | undefined;
-}
-export const getJobs = async ({
-  company,
-}: {
-  company: string;
-  filter: string;
-  category: string;
-}) => {
+export const login = async (username: string, password: string) => {
   try {
-    const url = `${apiOrigin}/${company}`;
-    const response = await axios.get(url);
-    const data = response.data as { data?: JobType[]; row?: number };
-    return data;
+    const url = `${apiOrigin}/auth/login`;
+    const response = await axios.post(url, {
+      username,
+      password
+    })
+    if (response.status === 200) {
+      return {
+        status: response.status,
+        data: response.data
+      };
+    }
   } catch (err) {
-    return err;
+    const axiosError = err as AxiosError;
+    if (axiosError.response?.status === 401)
+      return {
+        status: axiosError.response?.status,
+        message: (axiosError.response?.data as any).message
+      }
+    else
+      return {
+        status: axiosError.response?.status,
+        message: "Login failed!"
+      }
   }
-};
-
+}
 export const getUsersByRole = async (role: string) => {
   const url = `${apiOrigin}/user/users?role=${role}`;
   try {

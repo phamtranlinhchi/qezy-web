@@ -16,10 +16,9 @@ import {
  */
 export const msalConfig: Configuration = {
   auth: {
-    clientId: `${
-      process.env.REACT_APP_CLIENT_ID || "0200a985-4957-41f5-8c4d-0a15db00d07f"
-    }`,
-    authority: "https://login.microsoftonline.com/draphony.com",
+    clientId: `${process.env.REACT_APP_CLIENT_ID || "0200a985-4957-41f5-8c4d-0a15db00d07f"
+      }`,
+    authority: "https://login.microsoftonline.com",
     redirectUri: `${window.location.origin}`,
     navigateToLoginRequestUrl: false,
     // postLogoutRedirectUri: "http://localhost/"

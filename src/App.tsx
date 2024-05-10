@@ -26,7 +26,7 @@ function App() {
             <Route
               path="/permissions"
               element={
-                <PrivateComponent protect>
+                <PrivateComponent>
                   <PermissionsPage />
                 </PrivateComponent>
               }
