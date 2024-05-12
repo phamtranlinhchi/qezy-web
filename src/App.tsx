@@ -5,8 +5,8 @@ import { msalConfig } from './helpers/azureConfig';
 import PrivateComponent from './components/PrivateComponent';
 import Welcome from './components/Welcome';
 import { ConfirmProvider } from 'material-ui-confirm';
-import Home from './components/Home';
-import PermissionsPage from './components/permissons/PermissionsPage';
+import { Exams } from "./components/Exams";
+import { Questions } from "./components/Questions";
 function App() {
   const msalInstance = new PublicClientApplication(msalConfig);
   return (
@@ -18,16 +18,25 @@ function App() {
               index
               element={
                 <PrivateComponent>
-                  <Home />
+                  <Exams />
                 </PrivateComponent>
               }
             />
             <Route path="/welcome" element={<Welcome />} />
             <Route
-              path="/permissions"
+              path="/exams"
               element={
                 <PrivateComponent>
-                  <PermissionsPage />
+                  <Exams />
+                </PrivateComponent>
+              }
+            />
+
+            <Route
+              path="/questions"
+              element={
+                <PrivateComponent>
+                  <Questions />
                 </PrivateComponent>
               }
             />

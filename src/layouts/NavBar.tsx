@@ -2,33 +2,24 @@ import * as React from 'react';
 import Box from '@mui/material/Box';
 import BottomNavigation from '@mui/material/BottomNavigation';
 import BottomNavigationAction from '@mui/material/BottomNavigationAction';
-import TextSnippetIcon from '@mui/icons-material/TextSnippet';
-import DynamicFeedIcon from '@mui/icons-material/DynamicFeed';
-import { useMsal } from '@azure/msal-react';
-import ApprovalIcon from '@mui/icons-material/Approval';
-import AirplayIcon from '@mui/icons-material/Airplay';
+import QuizIcon from '@mui/icons-material/Quiz';
 import { Link } from 'react-router-dom';
-import ContactMailIcon from '@mui/icons-material/ContactMail';
 import MicrosoftAuth from '../components/MicrosoftAuth';
-import { GridSearchIcon } from '@mui/x-data-grid';
 import ListAltIcon from '@mui/icons-material/ListAlt';
-import ListIcon from '@mui/icons-material/List';
-import RecentActorsRoundedIcon from '@mui/icons-material/RecentActorsRounded';
 import UserInformation from '../components/Logout/UserInformation';
 
 const NavBar = () => {
   const currPage = window.location.pathname.split('/')[1]
     ? window.location.pathname.split('/')[1]
-    : 'home';
+    : 'exams';
   const [value, setValue] = React.useState(currPage);
-  const { role } = UserInformation();
 
   return (
     <Box
       sx={{ backgroundColor: '#FFFFFF', width: '100%', maxHeight: '60px' }}
       position={'sticky'}
       display={'flex'}
-      zIndex={1}
+      zIndex={2}
       borderBottom="1px solid #E9EAE0"
       top={0}
     >
@@ -59,34 +50,19 @@ const NavBar = () => {
           }}
         >
           <BottomNavigationAction
-            label="Opps"
-            value="home"
+            label="Exams"
+            value="exams"
             icon={<ListAltIcon />}
             component={Link}
-            to="/"
+            to="/exams"
           />
-          {role === 'ZMI.GlobalAdmin' && (
-            <BottomNavigation
-              sx={{
-                display: 'flex',
-                justifyContent: 'center',
-                gap: '20px',
-              }}
-              showLabels
-              value={value}
-              onChange={(event, newValue) => {
-                setValue(newValue);
-              }}
-            >
-              <BottomNavigationAction
-                label="Permissions"
-                value="permissions"
-                icon={<RecentActorsRoundedIcon />}
-                component={Link}
-                to="/permissions"
-              />
-            </BottomNavigation>
-          )}
+          <BottomNavigationAction
+            label="Questions"
+            value="questions"
+            icon={<QuizIcon />}
+            component={Link}
+            to="/questions"
+          />
         </BottomNavigation>
       </Box>
       <Box width="25%" display={'flex'} justifyContent={'flex-end'}>

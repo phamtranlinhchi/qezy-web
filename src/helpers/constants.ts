@@ -1,9 +1,21 @@
 export interface IUser {
   id: string;
-  email: string;
-  name: string;
+  username: string;
   role: string;
+  fullName: string;
   avatar: string;
+}
+
+export interface IExam {
+  _id: string;
+  examTitle: string;
+  updatedAt: Date;
+  createdAt: Date;
+}
+
+export interface IExamFilters {
+  examTitle: string;
+  [key: string]: string | undefined;
 }
 
 export const dateRegexOneYear1st: RegExp = /^(\d{4})-(\d{2})-(\d{2})$/; // 2023-12-21

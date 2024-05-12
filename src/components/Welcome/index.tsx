@@ -44,10 +44,12 @@ const Welcome = () => {
 
   const handleChangeUsername = (event: React.ChangeEvent<HTMLInputElement>) => {
     setUsername(event.target.value);
+    setErrMsg("")
   }
 
   const handleChangePassword = (event: React.ChangeEvent<HTMLInputElement>) => {
     setPassword(event.target.value);
+    setErrMsg("")
   }
 
   return (

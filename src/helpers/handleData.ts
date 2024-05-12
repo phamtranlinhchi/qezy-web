@@ -58,5 +58,5 @@ export function formatDateTime(value: Date): string {
   const miningDate = new Date(value);
   const date = `${miningDate.getDate() < 10 ? `0${miningDate.getDate()}` : miningDate.getDate()}-${miningDate.getMonth() + 1 < 10 ? `0${miningDate.getMonth() + 1}` : miningDate.getMonth() + 1}-${miningDate.getFullYear()}`;
   const time = `${miningDate.getHours() < 10 ? `0${miningDate.getHours()}` : miningDate.getHours()}:${miningDate.getMinutes() < 10 ? `0${miningDate.getMinutes()}` : miningDate.getMinutes()}:${miningDate.getSeconds() < 10 ? `0${miningDate.getSeconds()}` : miningDate.getSeconds()}`;
-  return `${date} ${time}`;
+  return `${time} ${date}`;
 }
