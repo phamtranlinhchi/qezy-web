@@ -7,6 +7,7 @@ import Welcome from './components/Welcome';
 import { ConfirmProvider } from 'material-ui-confirm';
 import { Exams } from "./components/Exams";
 import { Questions } from "./components/Questions";
+import { Users } from "./components/Users";
 function App() {
   const msalInstance = new PublicClientApplication(msalConfig);
   return (
@@ -35,8 +36,17 @@ function App() {
             <Route
               path="/questions"
               element={
-                <PrivateComponent>
+                <PrivateComponent protect>
                   <Questions />
+                </PrivateComponent>
+              }
+            />
+
+            <Route
+              path="/users"
+              element={
+                <PrivateComponent protect>
+                  <Users />
                 </PrivateComponent>
               }
             />

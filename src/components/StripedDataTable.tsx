@@ -72,12 +72,20 @@ export const useDebouncedEffect = (effect: () => void, deps: any[], delay: numbe
   }, [...(deps || []), delay]);
 }
 const StripedDataGrid = styled(DataGrid)(({ theme }) => ({
+  [`& .${gridClasses.toolbarContainer}`]: {
+    '&>button': {
+      color: "#388e3c !important"
+    }
+  },
   [`& .${gridClasses.cell}`]: {
     whiteSpace: "normal !important",
     wordWrap: "break-word !important",
+    '& .Mui-checked': {
+      color: "#388e3c !important"
+    }
   },
   [`& .${gridClasses.columnHeader}`]: {
-    backgroundColor: "#1976d2",
+    backgroundColor: "#388e3c",
     fontWeight: 'bold',
     fontSize: '15px',
     color: "#fff",
@@ -114,6 +122,9 @@ const StripedDataGrid = styled(DataGrid)(({ theme }) => ({
         },
       },
     },
+  },
+  [`& .MuiPaginationItem-root.Mui-selected`]: {
+    backgroundColor: "#388e3c !important"
   },
 }));
 export default function StripedDataTable({ currentPage, handleTotalPage, initialState, hiddenFooter = false, disableVirtualization = false, getHeight = true, autoHeight = true, checkboxSelection = true, onSelectionModelChange, onChangePageSizeOptions, handlePage, columns, rows, loading, rowCount }: { currentPage?: number, initialState?: object, hiddenFooter?: boolean, handleTotalPage?: (totalPages: number) => void, onChangePageSizeOptions?: (pageSizeOption: number) => void, getHeight?: boolean, autoHeight?: boolean, disableVirtualization?: boolean, handlePage: (newPage: number) => void, columns: any, onSelectionModelChange?: any, rows: any, checkboxSelection?: boolean, loading: boolean, rowCount?: number }) {

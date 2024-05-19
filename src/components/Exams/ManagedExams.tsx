@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import StripedDataTable from "../StripedDataTable";
-import { GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormLabel, TextField, Tooltip, Typography, useMediaQuery } from "@mui/material";
+import { GridColDef, GridRenderCellParams, GridValueGetterParams } from "@mui/x-data-grid";
+import { Avatar, Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormLabel, TextField, Tooltip, Typography, useMediaQuery } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -79,6 +79,24 @@ export const ManagedExams = () => {
                 } point(s)
               </div>
             </>
+          </div>
+        );
+      },
+    },
+    {
+      field: "creator",
+      headerName: "Author",
+      flex: 1,
+      sortable: false,
+      filterable: false,
+      renderCell: (params: GridRenderCellParams) => {
+        return (
+          <div style={{ display: "flex" }}>
+            <Avatar />
+            <div style={{ paddingLeft: "10px" }}>
+              <div>{params.value.fullName}</div>
+              <div style={{ fontSize: "12px" }}>{params.value.username}</div>
+            </div>
           </div>
         );
       },
@@ -241,10 +259,10 @@ export const ManagedExams = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      <h3>My Exams</h3>
+      {/* <h3>My Exams</h3> */}
       <Box
         sx={{
-          marginTop: 3,
+          // marginTop: 3,
           marginBottom: 1,
           width: "100%",
           display: "flex",

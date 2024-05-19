@@ -8,13 +8,13 @@ const Footer: React.FC = () => {
       <div style={{ textAlign: 'center' }}>
         <img
           width="80px"
-          src="../../public/assets/images/draphonyLogo.png"
+          src="../../public/assets/images/qezy_logo.png"
           alt="error"
         />
-        <Typography>Copyright by Draphony 2024</Typography>
+        <Typography>Copyright by Chee 2024</Typography>
         <Typography><span
-          style={{ marginTop: "10px", display: "block" }}>
-          ZMI-V0.3.X
+          style={{ display: "block" }}>
+          Qezy-V0.1.1
         </span></Typography>
       </div>
     </footer>

@@ -11,7 +11,7 @@ const Layout = ({ children }: LayoutProps) => {
   return (
     <>
       <NavBar />
-      <main style={{ minHeight: "78vh", padding: "20px" }}>{children}</main>
+      <main style={{ minHeight: "65vh", padding: "20px" }}>{children}</main>
       <Footer />
     </>
   );

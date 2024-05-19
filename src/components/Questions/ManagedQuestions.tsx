@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import StripedDataTable from "../StripedDataTable";
-import { GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormLabel, TextField, Tooltip, Typography, useMediaQuery } from "@mui/material";
+import { GridColDef, GridRenderCellParams, GridValueGetterParams } from "@mui/x-data-grid";
+import { Avatar, Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormControlLabel, FormLabel, IconButton, Radio, RadioGroup, TextField, Tooltip, Typography, useMediaQuery } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import { useTheme } from '@mui/material/styles';
+import { styled, useTheme } from '@mui/material/styles';
+import CloseIcon from '@mui/icons-material/Close';
+import MenuIcon from '@mui/icons-material/Menu';
 
 import { formatDateTime } from "../../helpers/handleData";
 import { deleteQuestionById, getQuestionsByCurrentUser } from "../../helpers/fetch";
@@ -18,6 +20,10 @@ export const useDebouncedEffect = (effect: () => void, deps: any[], delay: numbe
   }, [...(deps || []), delay]);
 };
 export const ManagedQuestions = () => {
+  // Dialog
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState<boolean>(false);
+  const [createQuestDialogOpen, setCreateQuestDialogOpen] = useState<boolean>(false);
+
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [pageSizeOptions, setPageSizeOptions] = useState<number>(5);
   const [totalPages, setTotalPages] = useState<number>(0);
@@ -27,24 +33,36 @@ export const ManagedQuestions = () => {
   const [rows, setRows] = useState<any[]>([]);
   const [searchString, setSearchString] = useState<string>("");
   const [selectedRows, setSelectedRows] = useState<any[]>([]);
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState<boolean>(false);
   const [isDltBtnDisabled, setIsDltBtnDisabled] = useState<boolean>(false)
+
+  // Create question dialog
+  const [quest, setQuest] = useState("")
+  const [questionType, setQuestionType] = useState('radio');
 
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('md'));
 
+  const BootstrapDialog = styled(Dialog)(({ theme }) => ({
+    '& .MuiDialogContent-root': {
+      padding: theme.spacing(2),
+    },
+    '& .MuiDialogActions-root': {
+      padding: theme.spacing(1),
+    },
+  }));
+  const DialogContentMemoized = React.memo(DialogContent);
 
   const questionColumns: GridColDef[] = [
     {
       field: "quest",
       headerName: "Question",
-      flex: 2,
+      flex: 3,
       filterable: false,
     },
     {
       field: "answers",
       headerName: "Answers",
-      flex: 2,
+      flex: 3,
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams) => {
@@ -60,9 +78,43 @@ export const ManagedQuestions = () => {
       },
     },
     {
+      field: "examIds",
+      headerName: "Exams",
+      flex: 2,
+      sortable: false,
+      filterable: false,
+      renderCell: (params: GridRenderCellParams) => {
+        return (
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <ul style={{ padding: 0, margin: 0 }}>
+              {params.row.examIds.map((exam: any) => (<li>{exam.examTitle}</li>))}
+            </ul>
+          </div>
+        );
+      },
+    },
+    {
+      field: "creator",
+      headerName: "Author",
+      flex: 2,
+      sortable: false,
+      filterable: false,
+      renderCell: (params: GridRenderCellParams) => {
+        return (
+          <div style={{ display: "flex" }}>
+            <Avatar />
+            <div style={{ paddingLeft: "10px" }}>
+              <div>{params.value.fullName}</div>
+              <div style={{ fontSize: "12px" }}>{params.value.username}</div>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
       field: "date",
       headerName: "Date",
-      flex: 1,
+      flex: 2,
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams) => {
@@ -186,18 +238,62 @@ export const ManagedQuestions = () => {
     setIsDltBtnDisabled(true)
   }
 
-  const handleCloseConfirmDialog = () => {
+  const handleCloseConfirmDeleteDialog = () => {
     setConfirmDialogOpen(false);
     setIsDltBtnDisabled(false)
   };
 
+  const handleCreateQuestion = () => {
+    setCreateQuestDialogOpen(true);
+  }
+
+  const handleCloseCreateQuestDialog = () => {
+    setCreateQuestDialogOpen(false);
+  };
+
+  const handleChangeQuestType = (e: React.ChangeEvent<HTMLInputElement>) => setQuestionType((e.target as HTMLInputElement).value)
+
+  const [items, setItems] = useState(["🍰 Cake", "🍩 Donut", "🍎 Apple", "🍕 Pizza"]);
+
+  const [draggedItem, setDraggedItem] = useState<string | null>(null);
+
+  const onDragStart = (e: any, index: number) => {
+    setDraggedItem(items[index]);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/html", e.target.parentNode as any);
+    e.dataTransfer.setDragImage(e.target.parentNode as any, 20, 20);
+  };
+
+  const onDragOver = (index: number) => {
+    const draggedOverItem = items[index];
+
+    // if the item is dragged over itself, ignore
+    if (draggedItem === draggedOverItem) {
+      return;
+    }
+
+    // filter out the currently dragged item
+    let updatedItems = items.filter(item => item !== draggedItem);
+
+    // add the dragged item after the dragged over item
+    updatedItems.splice(index, 0, draggedItem as string);
+
+    setItems(updatedItems);
+  };
+
+  const onDragEnd = () => {
+    setDraggedItem(null);
+  };
+
   return (
     <div>
+      {/* DIALOGS */}
+
       {/* Confirm delete */}
       <Dialog
         fullScreen={fullScreen}
         open={confirmDialogOpen}
-        onClose={handleCloseConfirmDialog}
+        onClose={handleCloseConfirmDeleteDialog}
         aria-labelledby="responsive-dialog-title"
       >
         <DialogTitle id="responsive-dialog-title">
@@ -209,7 +305,7 @@ export const ManagedQuestions = () => {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button autoFocus onClick={handleCloseConfirmDialog}>
+          <Button autoFocus onClick={handleCloseConfirmDeleteDialog}>
             Cancel
           </Button>
           <Button onClick={deleteQuestion} color="error" autoFocus>
@@ -217,17 +313,145 @@ export const ManagedQuestions = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      <h3>My Questions</h3>
+
+      {/* Create question */}
+      {/* <BootstrapDialog
+        onClose={handleCloseCreateQuestDialog}
+        aria-labelledby="customized-dialog-title"
+        open={createQuestDialogOpen}
+      >
+        <DialogTitle sx={{ m: 0, p: 2 }} id="customized-dialog-title">
+          Create Question
+        </DialogTitle>
+        <IconButton
+          aria-label="close"
+          onClick={handleCloseCreateQuestDialog}
+          sx={{
+            position: 'absolute',
+            right: 8,
+            top: 8,
+            color: (theme) => theme.palette.grey[500],
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
+        <DialogContentMemoized dividers>
+          <TextField
+            fullWidth
+            label='Question'
+            id='question'
+            name='question'
+            type='question'
+            required
+            value={quest}
+            onChange={(e: any) => setQuest(e.event?.target)}
+          >
+          </TextField>
+          <FormControl>
+            <FormLabel id="demo-controlled-radio-buttons-group">Question Type</FormLabel>
+            <RadioGroup
+              aria-labelledby="demo-controlled-radio-buttons-group"
+              name="controlled-radio-buttons-group"
+              value={questionType}
+              onChange={handleChangeQuestType}
+            >
+              <FormControlLabel value="radio" control={<Radio />} label="Picklist with 1 correct answer" />
+              <FormControlLabel value="checkbox" control={<Radio />} label="Picklist with multiple correct answers" />
+            </RadioGroup>
+          </FormControl>
+          <ul>
+            {items.map((item: any, idx: any) => (
+              <li key={item} onDragOver={() => onDragOver(idx)}>
+                <div
+                  className="drag"
+                  draggable
+                  onDragStart={e => onDragStart(e, idx)}
+                  onDragEnd={onDragEnd}
+                >
+                  <MenuIcon />
+                </div>
+                <span className="content">{item}</span>
+              </li>
+            ))}
+          </ul>
+        </DialogContentMemoized>
+        <DialogActions>
+          <Button autoFocus onClick={handleCloseCreateQuestDialog}>
+            Cancel
+          </Button>
+          <Button autoFocus onClick={handleCloseCreateQuestDialog}>
+            Save
+          </Button>
+        </DialogActions>
+      </BootstrapDialog> */}
+
+
+      {/* <h3>My Questions</h3> */}
+      {/* <h4 style={{ marginBottom: "5px" }}>Create Question</h4>
+      <Box sx={{ mb: 4 }}>
+        <Box sx={{ width: "30%" }}>
+          <FormLabel id="question">Question</FormLabel>
+          <TextField
+            size="small"
+            sx={{ mt: 2, mb: 2, width: "100%" }}
+            label='Your question'
+            id='question'
+            name='question'
+            type='question'
+            required
+            value={quest}
+            onChange={(e: any) => setQuest(e.event?.target)}
+          />
+        </Box>
+        <FormControl>
+          <FormLabel id="demo-controlled-radio-buttons-group">Question Type</FormLabel>
+          <RadioGroup
+            aria-labelledby="demo-controlled-radio-buttons-group"
+            name="controlled-radio-buttons-group"
+            value={questionType}
+            onChange={handleChangeQuestType}
+          >
+            <FormControlLabel value="radio" control={<Radio />} label="Picklist with 1 correct answer" />
+            <FormControlLabel value="checkbox" control={<Radio />} label="Picklist with multiple correct answers" />
+            <FormControlLabel value="short" control={<Radio />} label="A short text answer"></FormControlLabel>
+          </RadioGroup>
+        </FormControl>
+
+        {
+          questionType === "radio" && (
+            <Box>
+
+            </Box>
+          )
+        }
+
+        <ul>
+          {items.map((item: any, idx: any) => (
+            <li key={item} onDragOver={() => onDragOver(idx)}>
+              <div
+                className="drag"
+                draggable
+                onDragStart={e => onDragStart(e, idx)}
+                onDragEnd={onDragEnd}
+              >
+                <MenuIcon />
+              </div>
+              <span className="content">{item}</span>
+            </li>
+          ))}
+        </ul>
+      </Box>
+
+      <h4 style={{ marginBottom: "5px" }}>Questions List</h4> */}
       <Box
         sx={{
-          marginTop: 3,
           marginBottom: 1,
           width: "100%",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "flex-end"
         }}>
-        <TextField label='Search for question' id='fullWidth' onChange={handleSearchChange} size="small" sx={{ marginTop: 2, width: "30%" }} />
+        <TextField label='Search for question' onChange={handleSearchChange} size="small" sx={{ marginTop: 2, width: "30%" }} />
         <Box sx={{ display: "flex", height: "100%", mt: 1 }}>
           <Tooltip title='Select 1 or many question(s) to delete'>
             {/* If button is disabled, tooltip wont work without span */}
@@ -239,7 +463,7 @@ export const ManagedQuestions = () => {
             </span>
           </Tooltip>
           <Tooltip title='Create question'>
-            <Button color='success' onClick={loadDataTable}>
+            <Button color='success' onClick={handleCreateQuestion}>
               <AddIcon sx={{ fontSize: "28px" }} />
               Question
             </Button>

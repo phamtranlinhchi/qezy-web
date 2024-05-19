@@ -143,3 +143,37 @@ export const deleteQuestionById = async (
     return err;
   }
 };
+
+export const getUsers = async (
+  limit: number,
+  page: number,
+  search?: string,
+) => {
+  try {
+    let url = `${apiOrigin}/users?limit=${limit}&page=${page}&search=${search}`;
+    const response = await axios.get(url);
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      toast.error(`Error retrieving users list`);
+    }
+  } catch (err) {
+    return err;
+  }
+};
+
+export const deleteUserById = async (
+  id: string
+) => {
+  try {
+    let url = `${apiOrigin}/users/${id}`;
+    const response = await axios.delete(url);
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      toast.error(`Error deleting user`);
+    }
+  } catch (err) {
+    return err;
+  }
+};

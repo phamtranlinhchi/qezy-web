@@ -3,7 +3,6 @@ export interface IUser {
   username: string;
   role: string;
   fullName: string;
-  avatar: string;
 }
 
 export interface IExam {
