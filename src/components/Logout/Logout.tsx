@@ -6,7 +6,7 @@ type IProps = {
 }
 
 const Logout = (props: IProps) => {
-    const { avatarUrl, name, userName } = UserInformation();
+    const { avatarUrl, name, userName, role } = UserInformation();
 
     return (
         <Box sx={{ width: "280px" }} border={"1px solid rgba(0, 0, 0, 0.1)"} padding={2}>
@@ -19,7 +19,7 @@ const Logout = (props: IProps) => {
                         <b>{name}</b>
                     </Typography>
                     <Typography noWrap sx={{ overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", fontSize: 12 }}>
-                        {userName}
+                        {userName} {role === "admin" ? <b>{`${role.toUpperCase()}`}</b> : ""}
                     </Typography>
                 </Grid>
                 <Box>
@@ -30,7 +30,7 @@ const Logout = (props: IProps) => {
                 <Button
                     fullWidth
                     type="button"
-                    color="primary"
+                    color="error"
                     variant="contained"
                     onClick={props.onClick}
                 >

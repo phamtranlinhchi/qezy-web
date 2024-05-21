@@ -33,6 +33,36 @@ export const login = async (username: string, password: string) => {
       }
   }
 }
+
+export const register = async (username: string, password: string, fullName: string) => {
+  try {
+    const url = `${apiOrigin}/auth/register`;
+    const response = await axios.post(url, {
+      username,
+      password,
+      fullName
+    })
+    if (response.status === 200) {
+      return {
+        status: response.status,
+        data: response.data
+      };
+    }
+  } catch (err) {
+    const axiosError = err as AxiosError;
+    if (axiosError.response?.status === 400)
+      return {
+        status: axiosError.response?.status,
+        message: (axiosError.response?.data as any).message
+      }
+    else
+      return {
+        status: axiosError.response?.status,
+        message: "Register failed!"
+      }
+  }
+}
+
 export const getUsersByRole = async (role: string) => {
   const url = `${apiOrigin}/users?role=${role}`;
   try {

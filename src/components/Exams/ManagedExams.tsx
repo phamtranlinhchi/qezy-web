@@ -6,10 +6,15 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { useTheme } from '@mui/material/styles';
+import ListAltIcon from '@mui/icons-material/ListAlt';
 
 import { formatDateTime } from "../../helpers/handleData";
 import { IExam } from "../../helpers/constants";
 import { deleteExamById, getExamsByCurrentUser } from "../../helpers/fetch";
+
+interface ActionCellProps {
+  id: string;
+}
 
 export const useDebouncedEffect = (effect: () => void, deps: any[], delay: number): void => {
   useEffect(() => {
@@ -34,12 +39,44 @@ export const ManagedExams = () => {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('md'));
 
+  const ActionCell: React.FC<ActionCellProps> = ({ id }) => {
+    const handleEdit = async () => {
+      console.log(id);
+
+    }
+
+    // const handleDelete = async () => {
+    //   setDeleteId(id);
+    //   handleDeleteUser();
+    // };
+
+
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        sx={{
+          width: '60%',
+        }}
+      >
+        <Tooltip title='See all results of this exam'>
+          <span>
+            <Button sx={{ lineHeight: '0' }} onClick={handleEdit}>
+              <ListAltIcon color="success" />
+            </Button>
+          </span>
+        </Tooltip>
+      </Box>
+    );
+  };
+
 
   const examColumns: GridColDef[] = [
     {
       field: "examTitle",
       headerName: "Exam",
-      flex: 2,
+      flex: 3,
       filterable: false,
       renderCell: (params: GridRenderCellParams) => {
         return (
@@ -56,7 +93,7 @@ export const ManagedExams = () => {
     {
       field: "questions",
       headerName: "Questions",
-      flex: 1,
+      flex: 2,
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams) => {
@@ -86,7 +123,7 @@ export const ManagedExams = () => {
     {
       field: "creator",
       headerName: "Author",
-      flex: 1,
+      flex: 2,
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams) => {
@@ -104,7 +141,7 @@ export const ManagedExams = () => {
     {
       field: "date",
       headerName: "Date",
-      flex: 1,
+      flex: 2,
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams) => {
@@ -131,7 +168,18 @@ export const ManagedExams = () => {
         );
       },
     },
-
+    {
+      field: '_id',
+      headerName: 'Results',
+      flex: 1,
+      headerAlign: 'center',
+      align: 'center',
+      sortable: false,
+      filterable: false,
+      renderCell: (params: GridRenderCellParams) => (
+        <ActionCell id={params.value} />
+      ),
+    },
   ];
 
   async function loadDataTable() {
@@ -280,12 +328,16 @@ export const ManagedExams = () => {
               </Button>
             </span>
           </Tooltip>
-          <Tooltip title='Create exam'>
-            <Button color='success' onClick={loadDataTable}>
-              <AddIcon sx={{ fontSize: "28px" }} />
-              Exam
-            </Button>
-          </Tooltip>
+          <a href="http://localhost:8081">
+            <Tooltip title='Create exam'>
+              <Button color='success'
+              // onClick={loadDataTable}
+              >
+                <AddIcon sx={{ fontSize: "28px" }} />
+                Exam
+              </Button>
+            </Tooltip>
+          </a>
           <Tooltip title='Refresh data table'>
             <Button color='primary' onClick={loadDataTable}>
               <RefreshIcon sx={{ fontSize: "28px" }} />

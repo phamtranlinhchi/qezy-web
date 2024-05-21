@@ -27,7 +27,6 @@ interface ActionCellProps {
   id: string;
 }
 
-
 export const ManagedUsers = () => {
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [pageSizeOptions, setPageSizeOptions] = useState<number>(5);
@@ -256,7 +255,7 @@ export const ManagedUsers = () => {
       .required("Username is required"),
     password: yup
       .string()
-      .matches(/^.{8,30}$/, "Password should have at least 8 characters and max 30.")
+      .matches(/^.{8,30}$/, "Password should have at least 8 characters and max 30")
       .required("Password is required"),
     fullName: yup
       .string()

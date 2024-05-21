@@ -1,41 +1,32 @@
-import {
-  AuthenticatedTemplate,
-  UnauthenticatedTemplate,
-} from '@azure/msal-react';
-import { Box, Button, FormControl, IconButton, InputAdornment, InputLabel, OutlinedInput, TextField } from '@mui/material';
+import { Box, Button, TextField } from '@mui/material';
 // import MicrosoftAuth from '../MicrosoftAuth';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useState } from "react";
-import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import Cookies from "js-cookie"
 
-import { login } from "../../helpers/fetch";
+import { login, register } from "../../helpers/fetch";
 
 
 
-const Welcome = () => {
+const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [cfpassword, setCFPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const [errMsg, setErrMsg] = useState("");
   const navigate = useNavigate()
   const accessToken = Cookies.get('access_token');
 
-
-  const handleClickShowPassword = () => setShowPassword(show => !show);
-
-  const handleMouseDownPassword = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleRegister = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-  }
-
-  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const response = await login(username, password)
+    if (password !== cfpassword)
+      return setErrMsg("Password not match!")
+    if (password.length < 8 || password.length > 30)
+      return setErrMsg("Password should have at least 8 characters and max 30")
+    const response = await register(username, password, fullName)
     if (response?.status === 200) {
       setErrMsg("")
-      const expireDate = new Date(response.data.accessToken.expires)
-      Cookies.set('access_token', response.data.accessToken.token, { expires: expireDate });
       navigate('/')
     }
     else
@@ -52,13 +43,23 @@ const Welcome = () => {
     setErrMsg("")
   }
 
+  const handleChangeCFPassword = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setCFPassword(event.target.value);
+    setErrMsg("")
+  }
+
+  const handleChangeFullName = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setFullName(event.target.value);
+    setErrMsg("")
+  }
+
   return (
     <>
       {
         accessToken ? <Navigate to="/" /> :
           <Box
             sx={{
-              height: '80vh',
+              height: '85vh',
               width: '100vw',
               display: 'flex',
               alignItems: 'center',
@@ -79,49 +80,56 @@ const Welcome = () => {
                 sx={{
                   mt: 2,
                 }}
-                onSubmit={handleLogin}>
+                onSubmit={handleRegister}>
                 <TextField
                   color="success"
                   fullWidth
-                  label='Username'
+                  label='Full Name (*)'
+                  id='fullName'
+                  name='fullName'
+                  InputLabelProps={{ required: false }}
+                  required
+                  value={fullName}
+                  onChange={handleChangeFullName}
+                />
+                <TextField
+                  sx={{ mt: 2 }}
+                  color="success"
+                  fullWidth
+                  label='Username (*)'
                   id='username'
                   name='username'
                   InputLabelProps={{ required: false }}
                   required
                   value={username}
                   onChange={handleChangeUsername}
-
                 />
-                <Box sx={{
-                  mt: 2,
-                  width: "100%",
-                }}>
-                  <FormControl sx={{ width: '100%' }} color="success" variant="outlined">
-                    <InputLabel htmlFor="outlined-adornment-password">Password</InputLabel>
-                    <OutlinedInput
-                      id="outlined-adornment-password"
-                      type={showPassword ? 'text' : 'password'}
-                      color="success"
-                      endAdornment={
-                        <InputAdornment position="end" color="success">
-                          <IconButton
-                            aria-label="toggle password visibility"
-                            onClick={handleClickShowPassword}
-                            onMouseDown={handleMouseDownPassword}
-                            edge="end"
-                            color="success"
-                          >
-                            {showPassword ? <VisibilityOff /> : <Visibility />}
-                          </IconButton>
-                        </InputAdornment>
-                      }
-                      required
-                      label="Password"
-                      value={password}
-                      onChange={handleChangePassword}
-                    />
-                  </FormControl>
-                </Box>
+                <TextField
+                  sx={{ mt: 2 }}
+                  color="success"
+                  fullWidth
+                  label='Password (*)'
+                  id='password'
+                  name='password'
+                  type="password"
+                  InputLabelProps={{ required: false }}
+                  required
+                  value={password}
+                  onChange={handleChangePassword}
+                />
+                <TextField
+                  sx={{ mt: 2 }}
+                  color="success"
+                  fullWidth
+                  label='Retype password (*)'
+                  id='cfpassword'
+                  name='cfpassword'
+                  type="password"
+                  InputLabelProps={{ required: false }}
+                  required
+                  value={cfpassword}
+                  onChange={handleChangeCFPassword}
+                />
                 {
                   errMsg && <Box sx={{
                     mt: 2,
@@ -141,14 +149,14 @@ const Welcome = () => {
                   marginLeft: "4px",
                   fontSize: "12px"
                 }}>
-                  Don't have an account? <Link to="/register">Register now</Link>
+                  Already have an account? <Link to="/welcome">Login now</Link>
                 </Box>
                 {/* <MicrosoftAuth type="signin" /> */}
                 <Button type="submit" sx={{
                   mt: 3,
                 }}
                   color="success"
-                  variant="contained">LOGIN</Button>
+                  variant="contained">REGISTER</Button>
               </Box>
             </Box>
           </Box >
@@ -156,4 +164,4 @@ const Welcome = () => {
     </>
   );
 };
-export default Welcome;
+export default Register;

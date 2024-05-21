@@ -8,6 +8,7 @@ import { ConfirmProvider } from 'material-ui-confirm';
 import { Exams } from "./components/Exams";
 import { Questions } from "./components/Questions";
 import { Users } from "./components/Users";
+import Register from "./components/Register";
 function App() {
   const msalInstance = new PublicClientApplication(msalConfig);
   return (
@@ -24,6 +25,7 @@ function App() {
               }
             />
             <Route path="/welcome" element={<Welcome />} />
+            <Route path="/register" element={<Register />} />
             <Route
               path="/exams"
               element={
