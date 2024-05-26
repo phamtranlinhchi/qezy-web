@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import StripedDataTable from "../StripedDataTable";
 import { GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
-import { Avatar, Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormLabel, IconButton, TextField, Tooltip, Typography, useMediaQuery } from "@mui/material";
+import { Avatar, Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormLabel, IconButton, InputAdornment, InputLabel, MenuItem, TextField, Tooltip, Typography, useMediaQuery } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -11,9 +11,13 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import CloseIcon from "@mui/icons-material/Close";
 import { useFormik } from "formik";
 import * as yup from "yup";
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import Select, { SelectChangeEvent } from '@mui/material/Select';
+
 
 import { IExam, IUser } from "../../helpers/constants";
-import { deleteExamById, deleteUserById, getExamsByCurrentUser, getUsers } from "../../helpers/fetch";
+import { deleteUserById, getUserById, getUsers, register, updateUserById } from "../../helpers/fetch";
 
 export const useDebouncedEffect = (effect: () => void, deps: any[], delay: number): void => {
   useEffect(() => {
@@ -25,6 +29,7 @@ export const useDebouncedEffect = (effect: () => void, deps: any[], delay: numbe
 
 interface ActionCellProps {
   id: string;
+  role: string;
 }
 
 export const ManagedUsers = () => {
@@ -41,12 +46,30 @@ export const ManagedUsers = () => {
   const [isDltBtnDisabled, setIsDltBtnDisabled] = useState<boolean>(false)
   const [isCreateBtnDisabled, setIsCreateBtnDisabled] = useState<boolean>(false)
   const [deleteId, setDeleteId] = useState("");
+  const [editId, setEditId] = useState("");
   const [openCreate, setOpenCreate] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [errCreate, setErrCreate] = useState("")
+  const [errEdit, setErrEdit] = useState("")
+  const [editDialogOpen, setEditDialogOpen] = useState<boolean>(false);
+  const [userEdited, setUserEdited] = useState<any>();
 
-  const ActionCell: React.FC<ActionCellProps> = ({ id }) => {
+  const handleClickShowPassword = () => setShowPassword(show => !show);
+
+  const handleMouseDownPassword = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+  }
+
+  const ActionCell: React.FC<ActionCellProps> = ({ id, role }) => {
     const handleEdit = async () => {
-      console.log(id);
-
+      setEditId(id)
+      setEditDialogOpen(true);
+      const currUser = await getUserById(id)
+      setUserEdited(currUser)
+      const { username, fullName } = currUser;
+      formikEdit.setValues({
+        username, password: "", fullName
+      });
     }
 
     const handleDelete = async () => {
@@ -64,18 +87,28 @@ export const ManagedUsers = () => {
           width: '60%',
         }}
       >
-        <Button sx={{ lineHeight: '0' }} onClick={handleEdit}>
-          <EditIcon color="primary" />
-        </Button>
+        <Tooltip title="Edit user">
+          <span>
+            <Button sx={{ lineHeight: '0' }} onClick={handleEdit}>
+              <EditIcon color="primary" />
+            </Button>
+          </span>
+        </Tooltip>
 
-        <Button
-          sx={{ lineHeight: '0' }}
-          title="Delete"
-          color="primary"
-          onClick={handleDelete}
-        >
-          <DeleteIcon color="error" />
-        </Button>
+        <Tooltip title="Delete user">
+          <span>
+            <Button
+              sx={{ lineHeight: '0' }}
+              title="Delete"
+              color="error"
+              onClick={handleDelete}
+              disabled={role === "admin"}
+
+            >
+              <DeleteIcon />
+            </Button>
+          </span>
+        </Tooltip>
       </Box>
     );
   };
@@ -129,14 +162,14 @@ export const ManagedUsers = () => {
     },
     {
       field: '_id',
-      headerName: 'Action',
+      headerName: 'Actions',
       flex: 2,
       headerAlign: 'center',
       align: 'center',
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams) => (
-        <ActionCell id={params.value} />
+        <ActionCell id={params.value} role={params.row.role} />
       ),
     },
   ];
@@ -268,40 +301,25 @@ export const ManagedUsers = () => {
       username: "",
       password: "",
       fullName: "",
+      role: "",
     },
     validationSchema: validationSchema,
     onSubmit: async (values) => {
       try {
-
-        // const dataContact = await createContact({ ...values, author: userName });
-        // if (id) {
-        //   if (typeof dataContact === "object") {
-        //     await updateContactToOpp(id, {
-        //       contactId: dataContact._id,
-        //     });
-        //     formik.resetForm();
-        //   }
-        //   else {
-        //     if (dataContact) {
-        //       await updateContactToOpp(id, {
-        //         contactId: dataContact
-        //       })
-        //       formik.resetForm();
-        //     }
-        //   }
-        // } else {
-        //   if (typeof dataContact === "string") {
-        //     toast.error("Email address already exists");
-        //     setOpenCreate(true);
-        //   } else {
-        //     toast.success("Email address added successfully");
-        //     setOpenCreate(false);
-        //     formik.resetForm();
-        //   }
-        // }
-        // loadDataTable();
+        const { username, password, fullName } = values
+        const user: any = await register(username, password, fullName);
+        if (user?.status !== 200) {
+          setOpenCreate(true);
+          setErrCreate(user.message)
+        } else {
+          setOpenCreate(false);
+          setErrCreate("")
+          formik.resetForm();
+          loadDataTable();
+        }
       } catch (error) {
-        // toast.error(`${error}`);
+        console.log(error);
+
       }
     },
   });
@@ -309,6 +327,58 @@ export const ManagedUsers = () => {
   const handleCloseCreate = () => {
     setOpenCreate(false);
     setIsCreateBtnDisabled(false)
+    formik.resetForm();
+    setErrCreate("")
+  };
+
+  const validationEditSchema = yup.object({
+    username: yup
+      .string()
+      .required("Username is required"),
+    password: yup
+      .string()
+      .matches(/^.{8,30}$/, "Password should have at least 8 characters and max 30"),
+    fullName: yup
+      .string()
+      .matches(/^[a-zA-Z0-9\s&()_.]+$/, "Full name should only contain letters and spaces")
+      .required("Full name is required"),
+    role: yup
+      .string()
+      .required("Role is required")
+      .oneOf(["admin", "user"])
+  });
+
+  const formikEdit = useFormik({
+    initialValues: {
+      username: "",
+      password: "",
+      fullName: "",
+    },
+    validationSchema: validationEditSchema,
+    onSubmit: async (values) => {
+      try {
+        const { username, password, fullName } = values
+        const user: any = await updateUserById(editId, { username, password, fullName });
+        if (user?.status !== 200) {
+          setEditDialogOpen(true);
+          setErrEdit(user.message)
+        } else {
+          setEditDialogOpen(false);
+          setErrEdit("")
+          formikEdit.resetForm();
+          loadDataTable();
+        }
+      } catch (error) {
+        console.log(error);
+
+      }
+    },
+  });
+
+  const handleCloseEdit = () => {
+    setEditDialogOpen(false);
+    formikEdit.resetForm();
+    setErrEdit("")
   };
 
   return (
@@ -339,6 +409,19 @@ export const ManagedUsers = () => {
             <TextField
               sx={{ marginBottom: "20px" }}
               fullWidth
+              label='Full Name (*)'
+              id='fullName'
+              name='fullName'
+              type='fullName'
+              value={formik.values.fullName}
+              onChange={formik.handleChange}
+              error={formik.touched.fullName && Boolean(formik.errors.fullName)}
+              helperText={formik.touched.fullName && formik.errors.fullName}
+            />
+
+            <TextField
+              sx={{ marginBottom: "20px" }}
+              fullWidth
               label='Username (*)'
               id='username'
               name='username'
@@ -354,13 +437,76 @@ export const ManagedUsers = () => {
               label='Password (*)'
               id='password'
               name='password'
-              type='password'
+              type={showPassword ? "text" : "password"}
               value={formik.values.password}
               onChange={formik.handleChange}
               error={formik.touched.password && Boolean(formik.errors.password)}
               helperText={formik.touched.password && formik.errors.password}
+              InputProps={{ // <-- This is where the toggle button is added.
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={handleClickShowPassword}
+                      onMouseDown={handleMouseDownPassword}
+                    >
+                      {showPassword ? <Visibility /> : <VisibilityOff />}
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
             />
 
+            <FormControl fullWidth>
+              <InputLabel id="demo-simple-select-label">Role</InputLabel>
+              <Select
+                labelId="demo-simple-select-label"
+                id="demo-simple-select"
+                value={formik.values.role}
+                label="Role"
+              // onChange={handleChange}
+              >
+                <MenuItem value="user">User</MenuItem>
+                <MenuItem value="admin">Admin</MenuItem>
+              </Select>
+            </FormControl>
+
+            {errCreate && <Box sx={{ color: "red", width: "100%", textAlign: "left" }}>
+              {errCreate}
+            </Box>}
+          </DialogContent>
+          <DialogActions sx={{ display: "flex", justifyContent: "center" }}>
+            <Button autoFocus type='submit' title={"Create user"} sx={{ width: "40%", margin: "10px 0" }}>
+              Create a new user
+            </Button>
+          </DialogActions>
+        </form>
+
+      </Dialog>
+
+      {/* Edit user */}
+      <Dialog
+        fullWidth={true}
+        maxWidth={"sm"}
+        open={editDialogOpen}
+        onClose={handleCloseEdit}
+        sx={{ textAlign: "center" }}>
+        <DialogTitle sx={{ m: 0, p: 2 }} id='customized-dialog-title'>
+          Edit User
+        </DialogTitle>
+        <IconButton
+          aria-label='close'
+          onClick={handleCloseEdit}
+          sx={{
+            position: "absolute",
+            right: 8,
+            top: 8,
+            color: (theme) => theme.palette.grey[500],
+          }}>
+          <CloseIcon />
+        </IconButton>
+        <form onSubmit={formikEdit.handleSubmit}>
+          <DialogContent>
             <TextField
               sx={{ marginBottom: "20px" }}
               fullWidth
@@ -368,15 +514,61 @@ export const ManagedUsers = () => {
               id='fullName'
               name='fullName'
               type='fullName'
-              value={formik.values.fullName}
-              onChange={formik.handleChange}
-              error={formik.touched.fullName && Boolean(formik.errors.fullName)}
-              helperText={formik.touched.fullName && formik.errors.fullName}
+              value={formikEdit.values.fullName}
+              onChange={formikEdit.handleChange}
+              error={formikEdit.touched.fullName && Boolean(formikEdit.errors.fullName)}
+              helperText={formikEdit.touched.fullName && formikEdit.errors.fullName}
             />
+
+            <TextField
+              sx={{ marginBottom: "20px" }}
+              fullWidth
+              label='Username'
+              id='username'
+              name='username'
+              disabled
+              value={formikEdit.values.username}
+              // onChange={formikEdit.handleChange}
+              error={formikEdit.touched.username && Boolean(formikEdit.errors.username)}
+              helperText={formikEdit.touched.username && formikEdit.errors.username}
+            />
+
+            <TextField
+              sx={{ marginBottom: "20px" }}
+              fullWidth
+              label='Set password'
+              id='password'
+              name='password'
+              type={showPassword ? "text" : "password"}
+              value={formikEdit.values.password}
+              onChange={formikEdit.handleChange}
+              error={formikEdit.touched.password && Boolean(formikEdit.errors.password)}
+              helperText={formikEdit.touched.password && formikEdit.errors.password}
+              InputProps={{ // <-- This is where the toggle button is added.
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={handleClickShowPassword}
+                      onMouseDown={handleMouseDownPassword}
+                    >
+                      {showPassword ? <Visibility /> : <VisibilityOff />}
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
+            />
+
+            {errEdit && <Box sx={{ color: "red", width: "100%", textAlign: "left" }}>
+              {errEdit}
+            </Box>}
           </DialogContent>
-          <DialogActions sx={{ display: "flex", justifyContent: "center" }}>
-            <Button autoFocus onClick={handleCloseCreate} type='submit' title={"Create user"} sx={{ width: "40%", margin: "10px 0" }}>
-              Create a new user
+          <DialogActions>
+            <Button autoFocus onClick={handleCloseEdit}>
+              Cancel
+            </Button>
+            <Button autoFocus type='submit' color="success" title={"Save user"}>
+              Save
             </Button>
           </DialogActions>
         </form>

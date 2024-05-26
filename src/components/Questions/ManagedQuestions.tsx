@@ -8,9 +8,11 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { styled, useTheme } from '@mui/material/styles';
 import CloseIcon from '@mui/icons-material/Close';
 import MenuIcon from '@mui/icons-material/Menu';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 import { formatDateTime } from "../../helpers/handleData";
-import { deleteQuestionById, getQuestionsByCurrentUser } from "../../helpers/fetch";
+import { deleteQuestionById, getQuestionById, getQuestionsByCurrentUser, updateQuestionById } from "../../helpers/fetch";
 
 export const useDebouncedEffect = (effect: () => void, deps: any[], delay: number): void => {
   useEffect(() => {
@@ -19,6 +21,14 @@ export const useDebouncedEffect = (effect: () => void, deps: any[], delay: numbe
     return () => clearTimeout(handler);
   }, [...(deps || []), delay]);
 };
+
+interface ActionCellProps {
+  id: string;
+  handleEdit: any;
+  handleCloseEditDialog: any;
+  handleDelete: any;
+}
+
 export const ManagedQuestions = () => {
   // Dialog
   const [confirmDialogOpen, setConfirmDialogOpen] = useState<boolean>(false);
@@ -34,6 +44,11 @@ export const ManagedQuestions = () => {
   const [searchString, setSearchString] = useState<string>("");
   const [selectedRows, setSelectedRows] = useState<any[]>([]);
   const [isDltBtnDisabled, setIsDltBtnDisabled] = useState<boolean>(false)
+  const [deleteId, setDeleteId] = useState("");
+  const [editDialogOpen, setEditDialogOpen] = useState<boolean>(false);
+  const [editId, setEditId] = useState("");
+  const [questionEdited, setQuestionEdited] = useState<any>();
+
 
   // Create question dialog
   const [quest, setQuest] = useState("")
@@ -52,6 +67,57 @@ export const ManagedQuestions = () => {
   }));
   const DialogContentMemoized = React.memo(DialogContent);
 
+  const handleEdit = async (id: any) => {
+    setEditDialogOpen(true);
+    setEditId(id);
+    const currQuestion = await getQuestionById(id)
+    setQuestionEdited(currQuestion)
+  }
+
+  const handleDelete = async (id: any) => {
+    setDeleteId(id);
+    handleDeleteQuestion();
+  };
+
+  const handleCloseEditDialog = () => {
+    setEditDialogOpen(false);
+    setEditId("");
+  };
+  const ActionCell: React.FC<ActionCellProps> = ({ id, handleEdit, handleCloseEditDialog, handleDelete }) => {
+
+    return (
+      <Box
+        display="flex"
+        justifyContent="space-evenly"
+        alignItems="center"
+        sx={{
+          width: '100%',
+        }}
+      >
+        <Tooltip title="Edit question">
+          <span>
+            <Button sx={{ lineHeight: '0' }} onClick={() => handleEdit(id)}>
+              <EditIcon color="primary" />
+            </Button>
+          </span>
+        </Tooltip>
+
+        <Tooltip title="Delete question">
+          <span>
+            <Button
+              sx={{ lineHeight: '0' }}
+              title="Delete"
+              color="primary"
+              onClick={() => handleDelete(id)}
+            >
+              <DeleteIcon color="error" />
+            </Button>
+          </span>
+        </Tooltip>
+      </Box>
+    );
+  };
+
   const questionColumns: GridColDef[] = [
     {
       field: "quest",
@@ -69,9 +135,9 @@ export const ManagedQuestions = () => {
         const miningDate = new Date(params.value);
         return (
           <div style={{ display: "flex", flexDirection: "column" }}>
-            type: {params.row.type} <br />
+            {/* type: {params.row.type} <br /> */}
             <ul style={{ padding: 0, margin: 0 }}>
-              {params.row.answers.map((answer: any) => (<li style={{ color: answer.isTrue ? "green" : "black" }}>- {answer.answer}</li>))}
+              {params.row.answers.map((answer: any) => (<li style={{ color: answer.isTrue ? "green" : "black", fontWeight: answer.isTrue ? "bold" : "normal" }}><input type="radio" checked={answer.isTrue} disabled /> {answer.answer}</li>))}
             </ul>
           </div>
         );
@@ -140,6 +206,20 @@ export const ManagedQuestions = () => {
           </div>
         );
       },
+    },
+    {
+      field: '_id',
+      headerName: 'Actions',
+      flex: 1,
+      headerAlign: 'center',
+      align: 'center',
+      sortable: false,
+      filterable: false,
+      renderCell: (params: GridRenderCellParams) => (
+        <ActionCell id={params.value} handleEdit={handleEdit}
+          handleCloseEditDialog={handleCloseEditDialog}
+          handleDelete={handleDelete} />
+      ),
     },
 
   ];
@@ -224,10 +304,13 @@ export const ManagedQuestions = () => {
     loadDataTable();
   }, [searchString]);
 
-  const deleteQuestion = async () => {
-    for await (const row of selectedRows) {
-      await deleteQuestionById(row._id);
-    }
+  const deleteQuestion = async (id?: any) => {
+    if (id)
+      await deleteQuestionById(id);
+    else
+      for await (const row of selectedRows) {
+        await deleteQuestionById(row._id);
+      }
     setConfirmDialogOpen(false);
     loadDataTable()
     setIsDltBtnDisabled(false)
@@ -242,6 +325,12 @@ export const ManagedQuestions = () => {
     setConfirmDialogOpen(false);
     setIsDltBtnDisabled(false)
   };
+
+  const editQuestion = async (id: any) => {
+    await updateQuestionById(id, questionEdited);
+    setEditDialogOpen(false);
+    loadDataTable()
+  }
 
   const handleCreateQuestion = () => {
     setCreateQuestDialogOpen(true);
@@ -301,15 +390,45 @@ export const ManagedQuestions = () => {
         </DialogTitle>
         <DialogContent>
           <DialogContentText>
-            You can not recover the question(s) when it is deleted and one has been added to exams also be removed. Are you sure you want to delete?
+            You can not recover the question{deleteId ? "" : "(s)"} when it is deleted and one has been added to exams also be removed. Are you sure you want to delete?
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button autoFocus onClick={handleCloseConfirmDeleteDialog}>
             Cancel
           </Button>
-          <Button onClick={deleteQuestion} color="error" autoFocus>
+          <Button onClick={() => deleteId ? deleteQuestion(deleteId) : deleteQuestion()} color="error" autoFocus>
             Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog
+        fullScreen={fullScreen}
+        open={editDialogOpen}
+        onClose={handleCloseEditDialog}
+        aria-labelledby="responsive-dialog-title"
+      >
+        <DialogTitle id="responsive-dialog-title">
+          {"Edit Exam"}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            <pre
+              id="json-content"
+              style={{ overflow: 'scroll', height: '50vh' }}
+            >
+              {JSON.stringify(questionEdited, null, 2)}
+            </pre>
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button autoFocus onClick={handleCloseEditDialog}>
+            Cancel
+          </Button>
+          <Button onClick={() => editQuestion(editId)} color="error" autoFocus>
+            Save
           </Button>
         </DialogActions>
       </Dialog>

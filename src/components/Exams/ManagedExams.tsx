@@ -7,13 +7,18 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { useTheme } from '@mui/material/styles';
 import ListAltIcon from '@mui/icons-material/ListAlt';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 import { formatDateTime } from "../../helpers/handleData";
 import { IExam } from "../../helpers/constants";
-import { deleteExamById, getExamsByCurrentUser } from "../../helpers/fetch";
+import { deleteExamById, getExamById, getExamsByCurrentUser, updateExamById } from "../../helpers/fetch";
 
 interface ActionCellProps {
   id: string;
+  handleEdit: any;
+  handleCloseEditDialog: any;
+  handleDelete: any;
 }
 
 export const useDebouncedEffect = (effect: () => void, deps: any[], delay: number): void => {
@@ -34,22 +39,54 @@ export const ManagedExams = () => {
   const [searchString, setSearchString] = useState<string>("");
   const [selectedRows, setSelectedRows] = useState<IExam[]>([]);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState<boolean>(false);
+  const [editDialogOpen, setEditDialogOpen] = useState<boolean>(false);
   const [isDltBtnDisabled, setIsDltBtnDisabled] = useState<boolean>(false)
+  const [deleteId, setDeleteId] = useState("");
+  const [editId, setEditId] = useState("");
+  const [examEdited, setExamEdited] = useState<any>();
 
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('md'));
 
-  const ActionCell: React.FC<ActionCellProps> = ({ id }) => {
-    const handleEdit = async () => {
-      console.log(id);
+  const handleEdit = async (id: any) => {
+    setEditDialogOpen(true);
+    setEditId(id);
+    const currExam = await getExamById(id);
+    delete currExam._id;
+    delete currExam.creator;
+    delete currExam.createdAt;
+    delete currExam.updatedAt;
+    delete currExam.__v;
+    currExam.questions = currExam.questions.map((question: any) => {
+      const { quest, answers } = question.questionId
+      const { point } = question
+      return {
+        questionId: {
+          quest,
+          answers: answers.map((a: any) => {
+            const { answer, isTrue } = a;
+            return {
+              answer,
+              isTrue
+            }
+          })
+        },
+        point
+      }
+    })
+    setExamEdited(currExam);
+  }
 
-    }
+  const handleDelete = async (id: any) => {
+    setDeleteId(id);
+    handleDeleteExam();
+  };
 
-    // const handleDelete = async () => {
-    //   setDeleteId(id);
-    //   handleDeleteUser();
-    // };
-
+  const handleCloseEditDialog = () => {
+    setEditDialogOpen(false);
+    setEditId("");
+  };
+  const ActionCell: React.FC<ActionCellProps> = ({ id, handleEdit, handleCloseEditDialog, handleDelete }) => {
 
     return (
       <Box
@@ -62,8 +99,29 @@ export const ManagedExams = () => {
       >
         <Tooltip title='See all results of this exam'>
           <span>
-            <Button sx={{ lineHeight: '0' }} onClick={handleEdit}>
+            <Button sx={{ lineHeight: '0' }} onClick={() => handleEdit(id)}>
               <ListAltIcon color="success" />
+            </Button>
+          </span>
+        </Tooltip>
+
+        <Tooltip title="Edit exam">
+          <span>
+            <Button sx={{ lineHeight: '0' }} onClick={() => handleEdit(id)}>
+              <EditIcon color="primary" />
+            </Button>
+          </span>
+        </Tooltip>
+
+        <Tooltip title="Delete exam">
+          <span>
+            <Button
+              sx={{ lineHeight: '0' }}
+              title="Delete"
+              color="primary"
+              onClick={() => handleDelete(id)}
+            >
+              <DeleteIcon color="error" />
             </Button>
           </span>
         </Tooltip>
@@ -82,9 +140,9 @@ export const ManagedExams = () => {
         return (
           <div>
             <div>
-              <a target='_blank' rel='noreferrer' href={params.value}>
-                {params.value}
-              </a>
+              {/* <a target='_blank' rel='noreferrer' href={params.value}> */}
+              {params.value}
+              {/* </a> */}
             </div>
           </div>
         );
@@ -170,14 +228,18 @@ export const ManagedExams = () => {
     },
     {
       field: '_id',
-      headerName: 'Results',
+      headerName: 'Actions',
       flex: 1,
       headerAlign: 'center',
       align: 'center',
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams) => (
-        <ActionCell id={params.value} />
+        <ActionCell id={params.value}
+          handleEdit={handleEdit}
+          handleCloseEditDialog={handleCloseEditDialog}
+          handleDelete={handleDelete}
+        />
       ),
     },
   ];
@@ -262,10 +324,13 @@ export const ManagedExams = () => {
     loadDataTable();
   }, [searchString]);
 
-  const deleteExam = async () => {
-    for await (const row of selectedRows) {
-      await deleteExamById(row._id);
-    }
+  const deleteExam = async (id?: string) => {
+    if (id)
+      await deleteExamById(id);
+    else
+      for await (const row of selectedRows) {
+        await deleteExamById(row._id);
+      }
     setConfirmDialogOpen(false);
     loadDataTable()
     setIsDltBtnDisabled(false)
@@ -279,7 +344,14 @@ export const ManagedExams = () => {
   const handleCloseConfirmDialog = () => {
     setConfirmDialogOpen(false);
     setIsDltBtnDisabled(false)
+    setDeleteId("")
   };
+
+  const editExam = async (id: any) => {
+    await updateExamById(id, examEdited);
+    setEditDialogOpen(false);
+    loadDataTable()
+  }
 
   return (
     <div>
@@ -295,18 +367,49 @@ export const ManagedExams = () => {
         </DialogTitle>
         <DialogContent>
           <DialogContentText>
-            You can not recover the exam(s) when it is deleted. Are you sure you want to delete?
+            You can not recover the exam{deleteId ? "" : "(s)"} when it is deleted. Are you sure you want to delete?
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button autoFocus onClick={handleCloseConfirmDialog}>
             Cancel
           </Button>
-          <Button onClick={deleteExam} color="error" autoFocus>
+          <Button onClick={() => deleteId ? deleteExam(deleteId) : deleteExam()} color="error" autoFocus>
             Delete
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog
+        fullScreen={fullScreen}
+        open={editDialogOpen}
+        onClose={handleCloseEditDialog}
+        aria-labelledby="responsive-dialog-title"
+      >
+        <DialogTitle id="responsive-dialog-title">
+          {"Edit Exam"}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            <pre
+              id="json-content"
+              style={{ overflow: 'scroll', height: '50vh' }}
+            >
+              {JSON.stringify(examEdited, null, 2)}
+            </pre>
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button autoFocus onClick={handleCloseEditDialog}>
+            Cancel
+          </Button>
+          <Button onClick={() => editExam(editId)} color="error" autoFocus>
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* <h3>My Exams</h3> */}
       <Box
         sx={{
@@ -328,6 +431,7 @@ export const ManagedExams = () => {
               </Button>
             </span>
           </Tooltip>
+          {/* <a target="_blank" href="http://localhost:8081"> */}
           <a href="http://localhost:8081">
             <Tooltip title='Create exam'>
               <Button color='success'

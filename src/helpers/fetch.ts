@@ -91,6 +91,20 @@ export const getUserByEmail = async (email: string) => {
   }
 };
 
+export const getUserById = async (id: any) => {
+  const url = `${apiOrigin}/users/${id}`;
+  try {
+    const response = await axios.get(url);
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.error(`Can not find user with id ${id}`);
+    }
+  } catch (err) {
+    console.error(err);
+  }
+};
+
 export const getCurrentUser = async (
 ) => {
   try {
@@ -106,6 +120,31 @@ export const getCurrentUser = async (
   }
 };
 
+export const updateUserById = async (id: string, user: any) => {
+  try {
+    const url = `${apiOrigin}/users/${id}`;
+    const response = await axios.put(url, user)
+    if (response.status === 200) {
+      return {
+        status: response.status,
+        data: response.data
+      };
+    }
+  } catch (err) {
+    const axiosError = err as AxiosError;
+    if (axiosError.response?.status === 400)
+      return {
+        status: axiosError.response?.status,
+        message: (axiosError.response?.data as any).message
+      }
+    else
+      return {
+        status: axiosError.response?.status,
+        message: "Update user failed!"
+      }
+  }
+}
+
 export const getExamsByCurrentUser = async (
   limit: number,
   page: number,
@@ -118,6 +157,39 @@ export const getExamsByCurrentUser = async (
       return response.data;
     } else {
       toast.error(`Error retrieving exams list`);
+    }
+  } catch (err) {
+    return err;
+  }
+};
+
+export const getExamById = async (
+  id: any
+) => {
+  try {
+    let url = `${apiOrigin}/exams/${id}`;
+    const response = await axios.get(url);
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      toast.error(`Error retrieving exam by id ${id}`);
+    }
+  } catch (err) {
+    return err;
+  }
+};
+
+export const updateExamById = async (
+  id: string,
+  exam: any
+) => {
+  try {
+    let url = `${apiOrigin}/exams/${id}`;
+    const response = await axios.put(url, exam);
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      toast.error(`Error updating exam`);
     }
   } catch (err) {
     return err;
@@ -152,6 +224,39 @@ export const getQuestionsByCurrentUser = async (
       return response.data;
     } else {
       toast.error(`Error retrieving questions list`);
+    }
+  } catch (err) {
+    return err;
+  }
+};
+
+export const getQuestionById = async (
+  id: any
+) => {
+  try {
+    let url = `${apiOrigin}/questions/${id}`;
+    const response = await axios.get(url);
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      toast.error(`Error retrieving question by id ${id}`);
+    }
+  } catch (err) {
+    return err;
+  }
+};
+
+export const updateQuestionById = async (
+  id: string,
+  quest: any
+) => {
+  try {
+    let url = `${apiOrigin}/questions/${id}`;
+    const response = await axios.put(url, quest);
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      toast.error(`Error updating question`);
     }
   } catch (err) {
     return err;
