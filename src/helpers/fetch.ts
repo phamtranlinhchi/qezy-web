@@ -200,15 +200,20 @@ export const updateExamById = async (
   exam: any
 ) => {
   try {
-    let url = `${apiOrigin}/exams/${id}`;
-    const response = await axios.put(url, exam);
+    const url = `${apiOrigin}/exams/${id}`;
+    const response = await axios.put(url, exam)
     if (response.status === 200) {
-      return response.data;
-    } else {
-      toast.error(`Error updating exam`);
+      return {
+        status: response.status,
+        data: response.data
+      };
     }
   } catch (err) {
-    return err;
+    const axiosError = err as AxiosError;
+    return {
+      status: axiosError.response?.status,
+      message: (axiosError.response?.data as any).message
+    }
   }
 };
 
@@ -235,6 +240,21 @@ export const getQuestionsByCurrentUser = async (
 ) => {
   try {
     let url = `${apiOrigin}/questions?limit=${limit}&page=${page}&search=${search}`;
+    const response = await axios.get(url);
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      toast.error(`Error retrieving questions list`);
+    }
+  } catch (err) {
+    return err;
+  }
+};
+
+export const getAllQuestions = async (
+) => {
+  try {
+    let url = `${apiOrigin}/questions/all`;
     const response = await axios.get(url);
     if (response.status === 200) {
       return response.data;

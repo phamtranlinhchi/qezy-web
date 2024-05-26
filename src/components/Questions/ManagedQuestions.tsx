@@ -596,12 +596,12 @@ export const ManagedQuestions = () => {
             </Tooltip>
 
             <FormControl fullWidth >
-              <InputLabel id="demo-simple-select-label">Correct Answer</InputLabel>
+              <InputLabel id="demo-simple-select-label">Correct Answer (*)</InputLabel>
               <Select
                 labelId="demo-simple-select-label"
                 id="demo-simple-select"
                 value={formik.values.correctAnswer}
-                label="Correct Answer"
+                label="Correct Answer (*)"
                 MenuProps={{
                   disableScrollLock: true,
                 }}
@@ -711,7 +711,6 @@ export const ManagedQuestions = () => {
                       formikEdit.setValues((values) => {
                         const newAnswers = [...values.answers];
                         newAnswers.splice(index, 1);
-                        console.log(newAnswers);
 
                         return { ...values, answers: newAnswers }
                       })
@@ -730,12 +729,12 @@ export const ManagedQuestions = () => {
             </Tooltip>
 
             <FormControl fullWidth >
-              <InputLabel id="demo-simple-select-label">Correct Answer</InputLabel>
+              <InputLabel id="demo-simple-select-label">Correct Answer (*)</InputLabel>
               <Select
                 labelId="demo-simple-select-label"
                 id="demo-simple-select"
                 value={formikEdit.values.correctAnswer}
-                label="Correct Answer"
+                label="Correct Answer (*)"
                 MenuProps={{
                   disableScrollLock: true,
                 }}
@@ -746,8 +745,8 @@ export const ManagedQuestions = () => {
               </Select>
             </FormControl>
 
-            {errCreate && <Box sx={{ color: "red", width: "100%", textAlign: "left" }}>
-              {errCreate}
+            {errEdit && <Box sx={{ color: "red", width: "100%", textAlign: "left" }}>
+              {errEdit}
             </Box>}
           </DialogContent>
           <DialogActions>

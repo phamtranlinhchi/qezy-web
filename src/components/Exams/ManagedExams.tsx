@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import StripedDataTable from "../StripedDataTable";
 import { GridColDef, GridRenderCellParams, GridValueGetterParams } from "@mui/x-data-grid";
-import { Avatar, Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormLabel, TextField, Tooltip, Typography, useMediaQuery } from "@mui/material";
+import { Avatar, Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormLabel, IconButton, InputLabel, MenuItem, Select, TextField, Tooltip, Typography, useMediaQuery } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -9,10 +9,13 @@ import { useTheme } from '@mui/material/styles';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import * as yup from "yup";
+import { useFormik } from "formik";
+import CloseIcon from '@mui/icons-material/Close';
 
 import { formatDateTime } from "../../helpers/handleData";
 import { IExam } from "../../helpers/constants";
-import { deleteExamById, getExamById, getExamsByCurrentUser, updateExamById } from "../../helpers/fetch";
+import { deleteExamById, getAllQuestions, getExamById, getExamsByCurrentUser, updateExamById } from "../../helpers/fetch";
 
 interface ActionCellProps {
   id: string;
@@ -44,37 +47,52 @@ export const ManagedExams = () => {
   const [deleteId, setDeleteId] = useState("");
   const [editId, setEditId] = useState("");
   const [examEdited, setExamEdited] = useState<any>();
+  const [errEdit, setErrEdit] = useState("")
+  const [allQuestions, setAllQuestions] = useState([]);
+  const [addedQuestion, setAddedQuestion] = useState()
+  const [addedQuestionPoint, setAddedQuestionPoint] = useState(0)
+
 
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('md'));
+
+  useEffect(() => {
+    async function getQuestions() {
+      const questions = await getAllQuestions();
+      setAllQuestions(questions)
+    }
+    getQuestions()
+  }, [])
 
   const handleEdit = async (id: any) => {
     setEditDialogOpen(true);
     setEditId(id);
     const currExam = await getExamById(id);
-    delete currExam._id;
-    delete currExam.creator;
-    delete currExam.createdAt;
-    delete currExam.updatedAt;
-    delete currExam.__v;
-    currExam.questions = currExam.questions.map((question: any) => {
-      const { quest, answers } = question.questionId
-      const { point } = question
-      return {
-        questionId: {
-          quest,
-          answers: answers.map((a: any) => {
-            const { answer, isTrue } = a;
-            return {
-              answer,
-              isTrue
-            }
-          })
-        },
-        point
-      }
-    })
+    // delete currExam._id;
+    // delete currExam.creator;
+    // delete currExam.createdAt;
+    // delete currExam.updatedAt;
+    // delete currExam.__v;
+    // currExam.questions = currExam.questions.map((question: any) => {
+    //   const { quest, answers } = question.questionId
+    //   const { point } = question
+    //   return {
+    //     questionId: {
+    //       quest,
+    //       answers: answers.map((a: any) => {
+    //         const { answer, isTrue } = a;
+    //         return {
+    //           answer,
+    //           isTrue
+    //         }
+    //       })
+    //     },
+    //     point
+    //   }
+    // })
     setExamEdited(currExam);
+    const { examTitle, totalTimeInMinute, questions } = currExam;
+    formikEdit.setValues({ examTitle, totalTimeInMinute, questions })
   }
 
   const handleDelete = async (id: any) => {
@@ -353,6 +371,51 @@ export const ManagedExams = () => {
     loadDataTable()
   }
 
+  // EDIT
+  const validationEditSchema = yup.object({
+    examTitle: yup
+      .string()
+      .required("Exam title is required"),
+    totalTimeInMinute: yup
+      .string()
+      .required("Total time is required"),
+  });
+
+  const formikEdit = useFormik({
+    initialValues: {
+      examTitle: "",
+      totalTimeInMinute: "",
+      questions: []
+    },
+    validationSchema: validationEditSchema,
+    onSubmit: async (values) => {
+      try {
+        const newExam = { ...values, questions: values.questions.map((question: any, index) => ({ point: question.point, questionId: question.questionId._id })) }
+        const exam: any = await updateExamById(editId, newExam);
+        if (exam?.status !== 200) {
+          setEditDialogOpen(true);
+          setErrEdit(exam?.message)
+        } else {
+          setEditDialogOpen(false);
+          setErrEdit("")
+          formikEdit.resetForm();
+          loadDataTable();
+        }
+      } catch (error) {
+        console.log(error);
+
+      }
+    },
+  });
+
+  const handleCloseEdit = () => {
+    setEditDialogOpen(false);
+    formikEdit.resetForm();
+    setErrEdit("")
+    setAddedQuestion(undefined)
+    setAddedQuestionPoint(0)
+  };
+
   return (
     <div>
       {/* Confirm delete */}
@@ -382,32 +445,164 @@ export const ManagedExams = () => {
 
       {/* Edit Dialog */}
       <Dialog
-        fullScreen={fullScreen}
+        fullWidth={true}
+        maxWidth={"sm"}
         open={editDialogOpen}
-        onClose={handleCloseEditDialog}
-        aria-labelledby="responsive-dialog-title"
-      >
-        <DialogTitle id="responsive-dialog-title">
-          {"Edit Exam"}
+        onClose={handleCloseEdit}
+        sx={{ textAlign: "center" }}>
+        <DialogTitle sx={{ m: 0, p: 2 }} id='customized-dialog-title'>
+          Edit Exam
         </DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            <pre
-              id="json-content"
-              style={{ overflow: 'scroll', height: '50vh' }}
-            >
-              {JSON.stringify(examEdited, null, 2)}
-            </pre>
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button autoFocus onClick={handleCloseEditDialog}>
-            Cancel
-          </Button>
-          <Button onClick={() => editExam(editId)} color="success" autoFocus>
-            Save
-          </Button>
-        </DialogActions>
+        <IconButton
+          aria-label='close'
+          onClick={handleCloseEdit}
+          sx={{
+            position: "absolute",
+            right: 8,
+            top: 8,
+            color: (theme) => theme.palette.grey[500],
+          }}>
+          <CloseIcon />
+        </IconButton>
+        <form onSubmit={formikEdit.handleSubmit}>
+          <DialogContent>
+            <TextField
+              sx={{ marginBottom: "20px" }}
+              fullWidth
+              label='Exam Title (*)'
+              id='examTitle'
+              name='examTitle'
+              type='examTitle'
+              value={formikEdit.values.examTitle}
+              onChange={formikEdit.handleChange}
+              error={formikEdit.touched.examTitle && Boolean(formikEdit.errors.examTitle)}
+              helperText={formikEdit.touched.examTitle && formikEdit.errors.examTitle}
+            />
+
+            <TextField
+              fullWidth
+              label='Total time in minute (*)'
+              id='totalTimeInMinute'
+              name='totalTimeInMinute'
+              type='number'
+              InputProps={{ inputProps: { min: 1 } }}
+              value={formikEdit.values.totalTimeInMinute}
+              onChange={formikEdit.handleChange}
+              error={formikEdit.touched.totalTimeInMinute && Boolean(formikEdit.errors.totalTimeInMinute)}
+              helperText={formikEdit.touched.totalTimeInMinute && formikEdit.errors.totalTimeInMinute}
+            />
+
+            <Box sx={{ width: "100%", display: "flex", justifyContent: "space-between", fontFamily: "sans-serif" }}>
+              <h4 style={{ textAlign: "left" }}>Questions</h4>
+              <h4>Total Point: {formikEdit.values.questions.reduce((total: any, curr: any) => curr.point + total, 0)}</h4>
+            </Box>
+            {
+              formikEdit.values.questions.length > 0 && formikEdit.values.questions.map((question: any, index: number) => (
+                <Box sx={{ width: "100%", marginBottom: "20px", display: "flex", justifyContent: "space-between", fontSize: "18px" }}>
+                  <Box sx={{ textAlign: "left" }}>
+                    <Box sx={{ display: "flex", alignItems: "center" }}>
+                      {index + 1}. {question.questionId.quest}
+
+                    </Box>
+                    <ol style={{ listStyleType: "lower-alpha", margin: 0 }}>
+                      {question.questionId.answers.map((answer: any, index: number) =>
+                        <li key={index} style={{
+                          fontWeight: answer.isTrue ? "bold" : "normal",
+                          color: answer.isTrue ? "green" : "black",
+                        }}>
+                          {answer.answer}
+                        </li>
+                      )}
+                    </ol>
+                  </Box>
+                  <Box sx={{ display: "flex", alignItems: "center" }}>
+                    <TextField
+                      sx={{ marginLeft: "20px", width: "100px" }}
+                      label='Point'
+                      id={`questions[${index}].point`}
+                      name={`questions[${index}].point`}
+                      type='number'
+                      InputProps={{ inputProps: { min: 0 } }}
+                      value={(formikEdit.values.questions[index] as any).point}
+                      onChange={formikEdit.handleChange}
+                      error={formikEdit.touched.totalTimeInMinute && Boolean(formikEdit.errors.totalTimeInMinute)}
+                      helperText={formikEdit.touched.totalTimeInMinute && formikEdit.errors.totalTimeInMinute}
+                    />
+                    <Tooltip title="Remove question from this exam"><Button color="error" onClick={() => {
+                      formikEdit.setValues((values: any) => {
+                        const newQuestions = [...values.questions];
+                        newQuestions.splice(index, 1)
+                        return {
+                          ...values,
+                          questions: newQuestions
+                        }
+                      })
+                    }}><CloseIcon /></Button></Tooltip>
+                  </Box>
+                </Box>
+              ))
+            }
+
+            <Box sx={{ display: "flex", width: "100%", alignItems: "center" }}>
+              <FormControl sx={{ width: "60%" }}>
+                <InputLabel id="demo-simple-select-label">Questions</InputLabel>
+                <Select
+                  labelId="demo-simple-select-label"
+                  id="demo-simple-select"
+                  label="Questions"
+                  value={addedQuestion}
+                  MenuProps={{
+                    disableScrollLock: true,
+                  }}
+                  onChange={(e) => {
+                    const currQuest = allQuestions.find((ques: any) => ques._id === (e.target.value as any))
+                    setAddedQuestion(currQuest)
+                  }}
+                >
+                  {allQuestions.map((question: any) => <MenuItem value={question._id}>{question.quest}</MenuItem>)}
+                </Select>
+              </FormControl>
+              <TextField
+                sx={{ marginLeft: "10px", width: "15%" }}
+                label='Point'
+                id={`addedQuestionPoint`}
+                type='number'
+                InputProps={{ inputProps: { min: 0 } }}
+                value={addedQuestionPoint}
+                onChange={(e) => setAddedQuestionPoint(e.target.value as any)}
+              />
+              <Tooltip title='Add question'>
+                <Button color='success' onClick={() => {
+                  formikEdit.setValues((values: any) => {
+                    const newQuests = [...values.questions, { questionId: addedQuestion, point: addedQuestionPoint }];
+                    return {
+                      ...values,
+                      questions: newQuests
+                    }
+                  })
+                  setAddedQuestion(undefined)
+                  setAddedQuestionPoint(0)
+                }
+                }>
+                  <AddIcon sx={{ fontSize: "28px" }} />
+                  Question
+                </Button>
+              </Tooltip>
+            </Box>
+
+            {errEdit && <Box sx={{ color: "red", width: "100%", textAlign: "left" }}>
+              {errEdit}
+            </Box>}
+          </DialogContent>
+          <DialogActions>
+            <Button autoFocus onClick={handleCloseEditDialog}>
+              Cancel
+            </Button>
+            <Button autoFocus type='submit' color="success" title={"Save question"}>
+              Save
+            </Button>
+          </DialogActions>
+        </form>
       </Dialog>
 
       {/* <h3>My Exams</h3> */}
