@@ -91,10 +91,10 @@ export const ManagedExams = () => {
     return (
       <Box
         display="flex"
-        justifyContent="center"
+        justifyContent="space-evenly"
         alignItems="center"
         sx={{
-          width: '60%',
+          width: '100%',
         }}
       >
         <Tooltip title='See all results of this exam'>
@@ -134,7 +134,7 @@ export const ManagedExams = () => {
     {
       field: "examTitle",
       headerName: "Exam",
-      flex: 3,
+      flex: 4,
       filterable: false,
       renderCell: (params: GridRenderCellParams) => {
         return (
@@ -151,7 +151,7 @@ export const ManagedExams = () => {
     {
       field: "questions",
       headerName: "Questions",
-      flex: 2,
+      flex: 3,
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams) => {
@@ -181,7 +181,7 @@ export const ManagedExams = () => {
     {
       field: "creator",
       headerName: "Author",
-      flex: 2,
+      flex: 3,
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams) => {
@@ -199,7 +199,7 @@ export const ManagedExams = () => {
     {
       field: "date",
       headerName: "Date",
-      flex: 2,
+      flex: 3,
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams) => {
@@ -229,7 +229,7 @@ export const ManagedExams = () => {
     {
       field: '_id',
       headerName: 'Actions',
-      flex: 1,
+      flex: 2,
       headerAlign: 'center',
       align: 'center',
       sortable: false,
@@ -404,7 +404,7 @@ export const ManagedExams = () => {
           <Button autoFocus onClick={handleCloseEditDialog}>
             Cancel
           </Button>
-          <Button onClick={() => editExam(editId)} color="error" autoFocus>
+          <Button onClick={() => editExam(editId)} color="success" autoFocus>
             Save
           </Button>
         </DialogActions>

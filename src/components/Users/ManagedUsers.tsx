@@ -66,9 +66,9 @@ export const ManagedUsers = () => {
       setEditDialogOpen(true);
       const currUser = await getUserById(id)
       setUserEdited(currUser)
-      const { username, fullName } = currUser;
+      const { username, fullName, role } = currUser;
       formikEdit.setValues({
-        username, password: "", fullName
+        username, password: "", fullName, role
       });
     }
 
@@ -84,7 +84,7 @@ export const ManagedUsers = () => {
         justifyContent="space-evenly"
         alignItems="center"
         sx={{
-          width: '60%',
+          width: '100%',
         }}
       >
         <Tooltip title="Edit user">
@@ -163,7 +163,7 @@ export const ManagedUsers = () => {
     {
       field: '_id',
       headerName: 'Actions',
-      flex: 2,
+      flex: 1,
       headerAlign: 'center',
       align: 'center',
       sortable: false,
@@ -273,6 +273,12 @@ export const ManagedUsers = () => {
 
   const handleCreateUser = () => {
     setOpenCreate(true);
+    formik.setValues({
+      username: "",
+      password: "",
+      fullName: "",
+      role: "user",
+    });
     setIsCreateBtnDisabled(true)
   }
 
@@ -306,8 +312,8 @@ export const ManagedUsers = () => {
     validationSchema: validationSchema,
     onSubmit: async (values) => {
       try {
-        const { username, password, fullName } = values
-        const user: any = await register(username, password, fullName);
+        const { username, password, fullName, role } = values
+        const user: any = await register(username, password, fullName, role);
         if (user?.status !== 200) {
           setOpenCreate(true);
           setErrCreate(user.message)
@@ -353,12 +359,13 @@ export const ManagedUsers = () => {
       username: "",
       password: "",
       fullName: "",
+      role: "",
     },
     validationSchema: validationEditSchema,
     onSubmit: async (values) => {
       try {
-        const { username, password, fullName } = values
-        const user: any = await updateUserById(editId, { username, password, fullName });
+        const { username, password, fullName, role } = values
+        const user: any = await updateUserById(editId, { username, password, fullName, role });
         if (user?.status !== 200) {
           setEditDialogOpen(true);
           setErrEdit(user.message)
@@ -464,7 +471,7 @@ export const ManagedUsers = () => {
                 id="demo-simple-select"
                 value={formik.values.role}
                 label="Role"
-              // onChange={handleChange}
+                onChange={(e) => formik.setFieldValue('role', e.target.value as string)}
               >
                 <MenuItem value="user">User</MenuItem>
                 <MenuItem value="admin">Admin</MenuItem>
@@ -558,6 +565,20 @@ export const ManagedUsers = () => {
                 )
               }}
             />
+
+            <FormControl fullWidth>
+              <InputLabel id="demo-simple-select-label">Role</InputLabel>
+              <Select
+                labelId="demo-simple-select-label"
+                id="demo-simple-select"
+                value={formikEdit.values.role}
+                label="Role"
+                onChange={(e) => formikEdit.setFieldValue('role', e.target.value as string)}
+              >
+                <MenuItem value="user">User</MenuItem>
+                <MenuItem value="admin">Admin</MenuItem>
+              </Select>
+            </FormControl>
 
             {errEdit && <Box sx={{ color: "red", width: "100%", textAlign: "left" }}>
               {errEdit}

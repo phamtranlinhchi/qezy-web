@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import StripedDataTable from "../StripedDataTable";
 import { GridColDef, GridRenderCellParams, GridValueGetterParams } from "@mui/x-data-grid";
-import { Avatar, Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormControlLabel, FormLabel, IconButton, Radio, RadioGroup, TextField, Tooltip, Typography, useMediaQuery } from "@mui/material";
+import { Avatar, Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, FormControlLabel, FormLabel, IconButton, InputLabel, MenuItem, Radio, RadioGroup, Select, TextField, Tooltip, Typography, useMediaQuery } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -10,9 +10,11 @@ import CloseIcon from '@mui/icons-material/Close';
 import MenuIcon from '@mui/icons-material/Menu';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import * as yup from "yup";
+import { useFormik } from "formik";
 
 import { formatDateTime } from "../../helpers/handleData";
-import { deleteQuestionById, getQuestionById, getQuestionsByCurrentUser, updateQuestionById } from "../../helpers/fetch";
+import { createQuestion, deleteQuestionById, getAllExams, getQuestionById, getQuestionsByCurrentUser, updateQuestion, updateQuestionById } from "../../helpers/fetch";
 
 export const useDebouncedEffect = (effect: () => void, deps: any[], delay: number): void => {
   useEffect(() => {
@@ -33,6 +35,7 @@ export const ManagedQuestions = () => {
   // Dialog
   const [confirmDialogOpen, setConfirmDialogOpen] = useState<boolean>(false);
   const [createQuestDialogOpen, setCreateQuestDialogOpen] = useState<boolean>(false);
+  const [editQuestDialogOpen, setEditQuestDialogOpen] = useState<boolean>(false);
 
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [pageSizeOptions, setPageSizeOptions] = useState<number>(5);
@@ -45,14 +48,19 @@ export const ManagedQuestions = () => {
   const [selectedRows, setSelectedRows] = useState<any[]>([]);
   const [isDltBtnDisabled, setIsDltBtnDisabled] = useState<boolean>(false)
   const [deleteId, setDeleteId] = useState("");
-  const [editDialogOpen, setEditDialogOpen] = useState<boolean>(false);
   const [editId, setEditId] = useState("");
   const [questionEdited, setQuestionEdited] = useState<any>();
+  const [errCreate, setErrCreate] = useState("")
+  const [errEdit, setErrEdit] = useState("")
+  const [allExams, setAllExams] = useState([])
 
+  const handleCreateAnswer = () => {
+    formik.setValues((values) => ({ ...values, answers: [...values.answers, ""] }))
+  }
 
-  // Create question dialog
-  const [quest, setQuest] = useState("")
-  const [questionType, setQuestionType] = useState('radio');
+  const handleAddAnswer = () => {
+    formikEdit.setValues((values) => ({ ...values, answers: [...values.answers, ""] }))
+  }
 
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('md'));
@@ -65,13 +73,35 @@ export const ManagedQuestions = () => {
       padding: theme.spacing(1),
     },
   }));
-  const DialogContentMemoized = React.memo(DialogContent);
+
+  useEffect(() => {
+    async function getExams() {
+      const exams = await getAllExams();
+      setAllExams(exams)
+    }
+    getExams()
+  }, [])
 
   const handleEdit = async (id: any) => {
-    setEditDialogOpen(true);
+    setEditQuestDialogOpen(true);
     setEditId(id);
     const currQuestion = await getQuestionById(id)
     setQuestionEdited(currQuestion)
+    let { quest, examIds, type, answers } = currQuestion;
+    let correctAnswer: string = "";
+    answers = answers.map((answer: any, index: number) => {
+      if (answer.isTrue)
+        correctAnswer = `${index}`;
+      return answer.answer
+    })
+
+    formikEdit.setValues({
+      quest,
+      examIds,
+      type,
+      answers,
+      correctAnswer
+    });
   }
 
   const handleDelete = async (id: any) => {
@@ -80,8 +110,15 @@ export const ManagedQuestions = () => {
   };
 
   const handleCloseEditDialog = () => {
-    setEditDialogOpen(false);
+    setEditQuestDialogOpen(false);
     setEditId("");
+    formikEdit.setValues({
+      quest: "",
+      examIds: [],
+      type: "radio",
+      answers: [],
+      correctAnswer: ""
+    })
   };
   const ActionCell: React.FC<ActionCellProps> = ({ id, handleEdit, handleCloseEditDialog, handleDelete }) => {
 
@@ -122,13 +159,13 @@ export const ManagedQuestions = () => {
     {
       field: "quest",
       headerName: "Question",
-      flex: 3,
+      flex: 4,
       filterable: false,
     },
     {
       field: "answers",
       headerName: "Answers",
-      flex: 3,
+      flex: 4,
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams) => {
@@ -146,7 +183,7 @@ export const ManagedQuestions = () => {
     {
       field: "examIds",
       headerName: "Exams",
-      flex: 2,
+      flex: 3,
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams) => {
@@ -162,7 +199,7 @@ export const ManagedQuestions = () => {
     {
       field: "creator",
       headerName: "Author",
-      flex: 2,
+      flex: 3,
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams) => {
@@ -180,7 +217,7 @@ export const ManagedQuestions = () => {
     {
       field: "date",
       headerName: "Date",
-      flex: 2,
+      flex: 3,
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams) => {
@@ -210,7 +247,7 @@ export const ManagedQuestions = () => {
     {
       field: '_id',
       headerName: 'Actions',
-      flex: 1,
+      flex: 2,
       headerAlign: 'center',
       align: 'center',
       sortable: false,
@@ -328,7 +365,7 @@ export const ManagedQuestions = () => {
 
   const editQuestion = async (id: any) => {
     await updateQuestionById(id, questionEdited);
-    setEditDialogOpen(false);
+    setEditQuestDialogOpen(false);
     loadDataTable()
   }
 
@@ -336,42 +373,95 @@ export const ManagedQuestions = () => {
     setCreateQuestDialogOpen(true);
   }
 
-  const handleCloseCreateQuestDialog = () => {
+  // CREATE
+  const validationSchema = yup.object({
+    quest: yup
+      .string()
+      .required("Question title is required"),
+    correctAnswer: yup
+      .string()
+      .required("Correct answer is required"),
+  });
+
+  const formik = useFormik({
+    initialValues: {
+      quest: "",
+      examIds: [],
+      type: "radio",
+      answers: ["", ""],
+      correctAnswer: ""
+    },
+    validationSchema: validationSchema,
+    onSubmit: async (values) => {
+      try {
+        const newQuest = { ...values, answers: values.answers.map((answer, index) => ({ answer, isTrue: index === Number(values.correctAnswer) })) }
+
+        const question = await createQuestion({ ...newQuest, correctAnswer: null });
+        if (question?.status !== 200) {
+          setCreateQuestDialogOpen(true);
+          setErrCreate(question?.message)
+        } else {
+          setCreateQuestDialogOpen(false);
+          setErrCreate("")
+          formik.resetForm();
+          loadDataTable();
+        }
+      } catch (error) {
+        console.log(error);
+
+      }
+    },
+  });
+
+  const handleCloseCreate = () => {
     setCreateQuestDialogOpen(false);
+    formik.resetForm();
+    setErrCreate("")
   };
 
-  const handleChangeQuestType = (e: React.ChangeEvent<HTMLInputElement>) => setQuestionType((e.target as HTMLInputElement).value)
+  // EDIT
+  const validationEditSchema = yup.object({
+    quest: yup
+      .string()
+      .required("Question title is required"),
+    correctAnswer: yup
+      .string()
+      .required("Correct answer is required"),
+  });
 
-  const [items, setItems] = useState(["🍰 Cake", "🍩 Donut", "🍎 Apple", "🍕 Pizza"]);
+  const formikEdit = useFormik({
+    initialValues: {
+      quest: "",
+      examIds: [],
+      type: "radio",
+      answers: ["", ""],
+      correctAnswer: ""
+    },
+    validationSchema: validationEditSchema,
+    onSubmit: async (values) => {
+      try {
+        const newQuest = { ...values, answers: values.answers.map((answer, index) => ({ answer, isTrue: index === Number(values.correctAnswer) })) }
+        const question = await updateQuestion(editId, { ...newQuest, correctAnswer: null });
+        if (question?.status !== 200) {
+          setEditQuestDialogOpen(true);
+          setErrEdit(question?.message)
+        } else {
+          setEditQuestDialogOpen(false);
+          setErrEdit("")
+          formikEdit.resetForm();
+          loadDataTable();
+        }
+      } catch (error) {
+        console.log(error);
 
-  const [draggedItem, setDraggedItem] = useState<string | null>(null);
+      }
+    },
+  });
 
-  const onDragStart = (e: any, index: number) => {
-    setDraggedItem(items[index]);
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/html", e.target.parentNode as any);
-    e.dataTransfer.setDragImage(e.target.parentNode as any, 20, 20);
-  };
-
-  const onDragOver = (index: number) => {
-    const draggedOverItem = items[index];
-
-    // if the item is dragged over itself, ignore
-    if (draggedItem === draggedOverItem) {
-      return;
-    }
-
-    // filter out the currently dragged item
-    let updatedItems = items.filter(item => item !== draggedItem);
-
-    // add the dragged item after the dragged over item
-    updatedItems.splice(index, 0, draggedItem as string);
-
-    setItems(updatedItems);
-  };
-
-  const onDragEnd = () => {
-    setDraggedItem(null);
+  const handleCloseEdit = () => {
+    setEditQuestDialogOpen(false);
+    formikEdit.resetForm();
+    setErrEdit("")
   };
 
   return (
@@ -403,165 +493,275 @@ export const ManagedQuestions = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Edit Dialog */}
-      <Dialog
-        fullScreen={fullScreen}
-        open={editDialogOpen}
-        onClose={handleCloseEditDialog}
-        aria-labelledby="responsive-dialog-title"
-      >
-        <DialogTitle id="responsive-dialog-title">
-          {"Edit Exam"}
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            <pre
-              id="json-content"
-              style={{ overflow: 'scroll', height: '50vh' }}
-            >
-              {JSON.stringify(questionEdited, null, 2)}
-            </pre>
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button autoFocus onClick={handleCloseEditDialog}>
-            Cancel
-          </Button>
-          <Button onClick={() => editQuestion(editId)} color="error" autoFocus>
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
-
       {/* Create question */}
-      {/* <BootstrapDialog
-        onClose={handleCloseCreateQuestDialog}
-        aria-labelledby="customized-dialog-title"
+      <Dialog
+        fullWidth={true}
+        maxWidth={"sm"}
         open={createQuestDialogOpen}
-      >
-        <DialogTitle sx={{ m: 0, p: 2 }} id="customized-dialog-title">
+        onClose={handleCloseCreate}
+        sx={{ textAlign: "center" }}>
+        <DialogTitle sx={{ m: 0, p: 2 }} id='customized-dialog-title'>
           Create Question
         </DialogTitle>
         <IconButton
-          aria-label="close"
-          onClick={handleCloseCreateQuestDialog}
+          aria-label='close'
+          onClick={handleCloseCreate}
           sx={{
-            position: 'absolute',
+            position: "absolute",
             right: 8,
             top: 8,
             color: (theme) => theme.palette.grey[500],
-          }}
-        >
+          }}>
           <CloseIcon />
         </IconButton>
-        <DialogContentMemoized dividers>
-          <TextField
-            fullWidth
-            label='Question'
-            id='question'
-            name='question'
-            type='question'
-            required
-            value={quest}
-            onChange={(e: any) => setQuest(e.event?.target)}
-          >
-          </TextField>
-          <FormControl>
-            <FormLabel id="demo-controlled-radio-buttons-group">Question Type</FormLabel>
-            <RadioGroup
-              aria-labelledby="demo-controlled-radio-buttons-group"
-              name="controlled-radio-buttons-group"
-              value={questionType}
-              onChange={handleChangeQuestType}
-            >
-              <FormControlLabel value="radio" control={<Radio />} label="Picklist with 1 correct answer" />
-              <FormControlLabel value="checkbox" control={<Radio />} label="Picklist with multiple correct answers" />
-            </RadioGroup>
-          </FormControl>
-          <ul>
-            {items.map((item: any, idx: any) => (
-              <li key={item} onDragOver={() => onDragOver(idx)}>
-                <div
-                  className="drag"
-                  draggable
-                  onDragStart={e => onDragStart(e, idx)}
-                  onDragEnd={onDragEnd}
-                >
-                  <MenuIcon />
-                </div>
-                <span className="content">{item}</span>
-              </li>
-            ))}
-          </ul>
-        </DialogContentMemoized>
-        <DialogActions>
-          <Button autoFocus onClick={handleCloseCreateQuestDialog}>
-            Cancel
-          </Button>
-          <Button autoFocus onClick={handleCloseCreateQuestDialog}>
-            Save
-          </Button>
-        </DialogActions>
-      </BootstrapDialog> */}
+        <form onSubmit={formik.handleSubmit}>
+          <DialogContent>
+            <TextField
+              sx={{ marginBottom: "20px" }}
+              fullWidth
+              label='Question Title (*)'
+              id='quest'
+              name='quest'
+              type='quest'
+              value={formik.values.quest}
+              onChange={formik.handleChange}
+              error={formik.touched.quest && Boolean(formik.errors.quest)}
+              helperText={formik.touched.quest && formik.errors.quest}
+            />
 
-
-      {/* <h3>My Questions</h3> */}
-      {/* <h4 style={{ marginBottom: "5px" }}>Create Question</h4>
-      <Box sx={{ mb: 4 }}>
-        <Box sx={{ width: "30%" }}>
-          <FormLabel id="question">Question</FormLabel>
-          <TextField
-            size="small"
-            sx={{ mt: 2, mb: 2, width: "100%" }}
-            label='Your question'
-            id='question'
-            name='question'
-            type='question'
-            required
-            value={quest}
-            onChange={(e: any) => setQuest(e.event?.target)}
-          />
-        </Box>
-        <FormControl>
-          <FormLabel id="demo-controlled-radio-buttons-group">Question Type</FormLabel>
-          <RadioGroup
-            aria-labelledby="demo-controlled-radio-buttons-group"
-            name="controlled-radio-buttons-group"
-            value={questionType}
-            onChange={handleChangeQuestType}
-          >
-            <FormControlLabel value="radio" control={<Radio />} label="Picklist with 1 correct answer" />
-            <FormControlLabel value="checkbox" control={<Radio />} label="Picklist with multiple correct answers" />
-            <FormControlLabel value="short" control={<Radio />} label="A short text answer"></FormControlLabel>
-          </RadioGroup>
-        </FormControl>
-
-        {
-          questionType === "radio" && (
-            <Box>
-
-            </Box>
-          )
-        }
-
-        <ul>
-          {items.map((item: any, idx: any) => (
-            <li key={item} onDragOver={() => onDragOver(idx)}>
-              <div
-                className="drag"
-                draggable
-                onDragStart={e => onDragStart(e, idx)}
-                onDragEnd={onDragEnd}
+            <FormControl fullWidth sx={{ marginBottom: "20px" }}>
+              <InputLabel id="demo-simple-select-label">Exams Included</InputLabel>
+              <Select
+                labelId="demo-simple-select-label"
+                id="demo-simple-select"
+                value={formik.values.examIds}
+                label="Exams Included"
+                multiple
+                MenuProps={{
+                  disableScrollLock: true,
+                }}
+                onChange={(e) => formik.setFieldValue('examIds', e.target.value as string)}
               >
-                <MenuIcon />
-              </div>
-              <span className="content">{item}</span>
-            </li>
-          ))}
-        </ul>
-      </Box>
+                {allExams.map((exam: any) => <MenuItem value={exam._id}>{exam.examTitle}</MenuItem>)}
+              </Select>
+            </FormControl>
 
-      <h4 style={{ marginBottom: "5px" }}>Questions List</h4> */}
+            <FormControl fullWidth sx={{ marginBottom: "20px" }}>
+              <InputLabel id="demo-simple-select-label">Type</InputLabel>
+              <Select
+                labelId="demo-simple-select-label"
+                id="demo-simple-select"
+                value={formik.values.type}
+                label="Type"
+                onChange={(e) => formik.setFieldValue('type', e.target.value as string)}
+                disabled
+              >
+                <MenuItem value="radio">Radio</MenuItem>
+              </Select>
+            </FormControl>
+
+            {
+              formik.values.answers.length > 0 && formik.values.answers.map((answer, index) => (
+                <Box sx={{ marginBottom: "10px", display: "flex", width: "100%", justifyContent: "space-between", alignItems: "center" }}>
+                  <TextField
+                    fullWidth
+                    label={`Answer #${index + 1} ${index < 2 ? "(*)" : ""}`}
+                    id={`answer${index}`}
+                    name={`answers[${index}]`}
+                    type={`answer${index}`}
+                    value={formik.values.answers[index]}
+                    onChange={formik.handleChange}
+                    error={formik.touched.answers && Boolean(formik.errors.answers)}
+                    helperText={formik.touched.answers && formik.errors.answers}
+                  />
+                  {index > 1 &&
+                    <Button sx={{ color: "red" }} onClick={() => {
+                      formik.setValues((values) => {
+                        const newAnswers = [...values.answers];
+                        newAnswers.splice(index, 1);
+                        return { ...values, answers: newAnswers }
+                      })
+                    }}>
+                      <CloseIcon />
+                    </Button>}
+                </Box>
+              ))
+            }
+
+            <Tooltip title='Create answer'>
+              <Button color='success' sx={{ marginBottom: "20px" }} onClick={handleCreateAnswer}>
+                <AddIcon sx={{ fontSize: "28px" }} />
+                Answer
+              </Button>
+            </Tooltip>
+
+            <FormControl fullWidth >
+              <InputLabel id="demo-simple-select-label">Correct Answer</InputLabel>
+              <Select
+                labelId="demo-simple-select-label"
+                id="demo-simple-select"
+                value={formik.values.correctAnswer}
+                label="Correct Answer"
+                MenuProps={{
+                  disableScrollLock: true,
+                }}
+                onChange={(e) => formik.setFieldValue('correctAnswer', e.target.value as string)}
+                error={formik.touched.correctAnswer && Boolean(formik.errors.correctAnswer)}
+              >
+                {formik.values.answers.map((answer: any, index) => <MenuItem value={index}>{answer}</MenuItem>)}
+              </Select>
+            </FormControl>
+
+            {errCreate && <Box sx={{ color: "red", width: "100%", textAlign: "left" }}>
+              {errCreate}
+            </Box>}
+          </DialogContent>
+          <DialogActions sx={{ display: "flex", justifyContent: "center" }}>
+            <Button autoFocus type='submit' title={"Create user"} sx={{ width: "40%", margin: "10px 0" }}>
+              Create a new question
+            </Button>
+          </DialogActions>
+        </form>
+
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog
+        fullWidth={true}
+        maxWidth={"sm"}
+        open={editQuestDialogOpen}
+        onClose={handleCloseEdit}
+        sx={{ textAlign: "center" }}>
+        <DialogTitle sx={{ m: 0, p: 2 }} id='customized-dialog-title'>
+          Edit Question
+        </DialogTitle>
+        <IconButton
+          aria-label='close'
+          onClick={handleCloseEdit}
+          sx={{
+            position: "absolute",
+            right: 8,
+            top: 8,
+            color: (theme) => theme.palette.grey[500],
+          }}>
+          <CloseIcon />
+        </IconButton>
+        <form onSubmit={formikEdit.handleSubmit}>
+          <DialogContent>
+            <TextField
+              sx={{ marginBottom: "20px" }}
+              fullWidth
+              label='Question Title (*)'
+              id='quest'
+              name='quest'
+              type='quest'
+              value={formikEdit.values.quest}
+              onChange={formikEdit.handleChange}
+              error={formikEdit.touched.quest && Boolean(formikEdit.errors.quest)}
+              helperText={formikEdit.touched.quest && formikEdit.errors.quest}
+            />
+
+            <FormControl fullWidth sx={{ marginBottom: "20px" }}>
+              <InputLabel id="demo-simple-select-label">Exams Included</InputLabel>
+              <Select
+                labelId="demo-simple-select-label"
+                id="demo-simple-select"
+                value={formikEdit.values.examIds}
+                label="Exams Included"
+                multiple
+                MenuProps={{
+                  disableScrollLock: true,
+                }}
+                onChange={(e) => formikEdit.setFieldValue('examIds', e.target.value as string)}
+              >
+                {allExams.map((exam: any) => <MenuItem value={exam._id}>{exam.examTitle}</MenuItem>)}
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth sx={{ marginBottom: "20px" }}>
+              <InputLabel id="demo-simple-select-label">Type</InputLabel>
+              <Select
+                labelId="demo-simple-select-label"
+                id="demo-simple-select"
+                value={formikEdit.values.type}
+                label="Type"
+                onChange={(e) => formikEdit.setFieldValue('type', e.target.value as string)}
+                disabled
+              >
+                <MenuItem value="radio">Radio</MenuItem>
+              </Select>
+            </FormControl>
+
+            {
+              formikEdit.values.answers.length > 0 && formikEdit.values.answers.map((answer, index) => (
+                <Box sx={{ marginBottom: "10px", display: "flex", width: "100%", justifyContent: "space-between", alignItems: "center" }}>
+                  <TextField
+                    fullWidth
+                    label={`Answer #${index + 1} ${index < 2 ? "(*)" : ""}`}
+                    id={`answer${index}`}
+                    name={`answers[${index}]`}
+                    type={`answer${index}`}
+                    value={formikEdit.values.answers[index]}
+                    onChange={formikEdit.handleChange}
+                    error={formikEdit.touched.answers && Boolean(formikEdit.errors.answers)}
+                    helperText={formikEdit.touched.answers && formikEdit.errors.answers}
+                  />
+                  {index > 1 &&
+                    <Button sx={{ color: "red" }} onClick={() => {
+                      formikEdit.setValues((values) => {
+                        const newAnswers = [...values.answers];
+                        newAnswers.splice(index, 1);
+                        console.log(newAnswers);
+
+                        return { ...values, answers: newAnswers }
+                      })
+                    }}>
+                      <CloseIcon />
+                    </Button>}
+                </Box>
+              ))
+            }
+
+            <Tooltip title='Create answer'>
+              <Button color='success' sx={{ marginBottom: "20px" }} onClick={handleAddAnswer}>
+                <AddIcon sx={{ fontSize: "28px" }} />
+                Answer
+              </Button>
+            </Tooltip>
+
+            <FormControl fullWidth >
+              <InputLabel id="demo-simple-select-label">Correct Answer</InputLabel>
+              <Select
+                labelId="demo-simple-select-label"
+                id="demo-simple-select"
+                value={formikEdit.values.correctAnswer}
+                label="Correct Answer"
+                MenuProps={{
+                  disableScrollLock: true,
+                }}
+                onChange={(e) => formikEdit.setFieldValue('correctAnswer', e.target.value as string)}
+                error={formikEdit.touched.correctAnswer && Boolean(formikEdit.errors.correctAnswer)}
+              >
+                {formikEdit.values.answers.map((answer: any, index) => <MenuItem value={index}>{answer}</MenuItem>)}
+              </Select>
+            </FormControl>
+
+            {errCreate && <Box sx={{ color: "red", width: "100%", textAlign: "left" }}>
+              {errCreate}
+            </Box>}
+          </DialogContent>
+          <DialogActions>
+            <Button autoFocus onClick={handleCloseEditDialog}>
+              Cancel
+            </Button>
+            <Button autoFocus type='submit' color="success" title={"Save question"}>
+              Save
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
+
       <Box
         sx={{
           marginBottom: 1,

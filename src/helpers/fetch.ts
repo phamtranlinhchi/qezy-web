@@ -34,13 +34,14 @@ export const login = async (username: string, password: string) => {
   }
 }
 
-export const register = async (username: string, password: string, fullName: string) => {
+export const register = async (username: string, password: string, fullName: string, role?: string) => {
   try {
     const url = `${apiOrigin}/auth/register`;
     const response = await axios.post(url, {
       username,
       password,
-      fullName
+      fullName,
+      role // Need to create a new API for creating new user
     })
     if (response.status === 200) {
       return {
@@ -163,6 +164,21 @@ export const getExamsByCurrentUser = async (
   }
 };
 
+export const getAllExams = async (
+) => {
+  try {
+    let url = `${apiOrigin}/exams/all`;
+    const response = await axios.get(url);
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      toast.error(`Error retrieving exams list`);
+    }
+  } catch (err) {
+    return err;
+  }
+};
+
 export const getExamById = async (
   id: any
 ) => {
@@ -245,6 +261,44 @@ export const getQuestionById = async (
     return err;
   }
 };
+
+export const createQuestion = async (question: any) => {
+  try {
+    const url = `${apiOrigin}/questions`;
+    const response = await axios.post(url, question)
+    if (response.status === 200) {
+      return {
+        status: response.status,
+        data: response.data
+      };
+    }
+  } catch (err) {
+    const axiosError = err as AxiosError;
+    return {
+      status: axiosError.response?.status,
+      message: (axiosError.response?.data as any).message
+    }
+  }
+}
+
+export const updateQuestion = async (id: string, question: any) => {
+  try {
+    const url = `${apiOrigin}/questions/${id}`;
+    const response = await axios.put(url, question)
+    if (response.status === 200) {
+      return {
+        status: response.status,
+        data: response.data
+      };
+    }
+  } catch (err) {
+    const axiosError = err as AxiosError;
+    return {
+      status: axiosError.response?.status,
+      message: (axiosError.response?.data as any).message
+    }
+  }
+}
 
 export const updateQuestionById = async (
   id: string,
