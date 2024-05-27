@@ -9,6 +9,7 @@ import { Exams } from "./components/Exams";
 import { Questions } from "./components/Questions";
 import { Users } from "./components/Users";
 import Register from "./components/Register";
+import WelcomeUser from "./components/WelcomeUser";
 function App() {
   const msalInstance = new PublicClientApplication(msalConfig);
   return (
@@ -25,6 +26,7 @@ function App() {
               }
             />
             <Route path="/welcome" element={<Welcome />} />
+            <Route path="/welcome-user" element={<WelcomeUser />} />
             <Route path="/register" element={<Register />} />
             <Route
               path="/exams"

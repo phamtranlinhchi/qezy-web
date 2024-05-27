@@ -23,8 +23,7 @@ const PrivateComponent: React.FC<PrivateComponentProps> = memo(
         return (
             <>
                 {
-                    !accessToken || (protect && role !== "admin") ?
-                        <Navigate to="/welcome" /> : (<Layout>{children}</Layout>)
+                    accessToken ? ((role === "user" ? <Navigate to="/welcome-user" /> : (<Layout>{children}</Layout>))) : <Navigate to="/welcome" />
                 }
             </>
         );

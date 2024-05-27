@@ -93,8 +93,8 @@ export const ManagedExams = () => {
     //   }
     // })
     setExamEdited(currExam);
-    const { examTitle, totalTimeInMinute, questions } = currExam;
-    formikEdit.setValues({ examTitle, totalTimeInMinute, questions })
+    const { examTitle, totalTimeInMinute, questions, _id } = currExam;
+    formikEdit.setValues({ examTitle, totalTimeInMinute, questions, _id })
   }
 
   const handleGetResults = async (id: any) => {
@@ -403,6 +403,7 @@ export const ManagedExams = () => {
 
   const formikEdit = useFormik({
     initialValues: {
+      _id: "",
       examTitle: "",
       totalTimeInMinute: "",
       questions: []
@@ -468,23 +469,23 @@ export const ManagedExams = () => {
             {
               currExamRes?.docs.length > 0 && currExamRes?.docs.map((res: any) => {
                 return <Box sx={{ color: "#000", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-                  <div style={{ display: "flex" }}>
+                  <div style={{ display: "flex", width: "30%" }}>
                     <Avatar />
                     <div style={{ paddingLeft: "10px" }}>
                       <div>{res.candidate.fullName}</div>
                       <div style={{ fontSize: "12px" }}>{res.candidate.username}</div>
                     </div>
                   </div>
-                  <div style={{ fontSize: "14px" }}>
+                  <div style={{ fontSize: "14px", width: "10%" }}>
                     Score: <br />
                     {res.score}/{res.examId.questions.reduce((total: any, curr: any) => total + curr.point, 0)}
                   </div>
-                  <div style={{ color: "grey", fontSize: "14px" }}>
+                  <div style={{ color: "grey", fontSize: "14px", width: "40%" }}>
                     Start time: {formatDate(res.startTime)}
                     <br />
                     End time: &nbsp;&nbsp;{formatDate(res.endTime)}
                   </div>
-                  <div style={{ fontSize: "14px" }}>
+                  <div style={{ fontSize: "14px", width: "10%" }}>
                     <a target="_blank" href={`http://localhost:8082/res/${res._id}`}>View</a>
                   </div>
                 </Box>
@@ -545,6 +546,19 @@ export const ManagedExams = () => {
         </IconButton>
         <form onSubmit={formikEdit.handleSubmit}>
           <DialogContent>
+            <TextField
+              sx={{ marginBottom: "20px" }}
+              fullWidth
+              label='ID'
+              id='examId'
+              type='examTitle'
+              disabled
+              value={formikEdit.values._id}
+              onChange={formikEdit.handleChange}
+              error={formikEdit.touched.examTitle && Boolean(formikEdit.errors.examTitle)}
+              helperText={formikEdit.touched.examTitle && formikEdit.errors.examTitle}
+            />
+
             <TextField
               sx={{ marginBottom: "20px" }}
               fullWidth
