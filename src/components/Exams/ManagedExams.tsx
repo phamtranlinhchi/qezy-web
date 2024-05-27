@@ -484,6 +484,9 @@ export const ManagedExams = () => {
                     <br />
                     End time: &nbsp;&nbsp;{formatDate(res.endTime)}
                   </div>
+                  <div style={{ fontSize: "14px" }}>
+                    <a target="_blank" href={`http://localhost:8082/res/${res._id}`}>View</a>
+                  </div>
                 </Box>
               })
             }
