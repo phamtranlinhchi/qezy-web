@@ -490,6 +490,9 @@ export const ManagedExams = () => {
                 </Box>
               })
             }
+            {currExamRes?.docs.length === 0 && <Box sx={{ width: "100%", textAlign: "center" }}>
+              No candidate have done this exam.
+            </Box>}
           </DialogContentText>
         </DialogContent>
       </Dialog>
