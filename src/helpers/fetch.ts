@@ -386,3 +386,19 @@ export const deleteUserById = async (
     return err;
   }
 };
+
+export const getExamResultByExamId = async (
+  id: any
+) => {
+  try {
+    let url = `${apiOrigin}/results?examId=${id}&limit=1000`;
+    const response = await axios.get(url);
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      toast.error(`Error retrieving results by exam id ${id}`);
+    }
+  } catch (err) {
+    return err;
+  }
+};

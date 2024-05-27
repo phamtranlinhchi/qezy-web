@@ -12,10 +12,11 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import * as yup from "yup";
 import { useFormik } from "formik";
 import CloseIcon from '@mui/icons-material/Close';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 
 import { formatDateTime } from "../../helpers/handleData";
 import { IExam } from "../../helpers/constants";
-import { deleteExamById, getAllQuestions, getExamById, getExamsByCurrentUser, updateExamById } from "../../helpers/fetch";
+import { deleteExamById, getAllQuestions, getExamById, getExamResultByExamId, getExamsByCurrentUser, updateExamById } from "../../helpers/fetch";
 
 interface ActionCellProps {
   id: string;
@@ -51,7 +52,8 @@ export const ManagedExams = () => {
   const [allQuestions, setAllQuestions] = useState([]);
   const [addedQuestion, setAddedQuestion] = useState()
   const [addedQuestionPoint, setAddedQuestionPoint] = useState(0)
-
+  const [resDialogOpen, setResDialogOpen] = useState(false)
+  const [currExamRes, setCurrExamRes] = useState<any>()
 
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('md'));
@@ -95,6 +97,12 @@ export const ManagedExams = () => {
     formikEdit.setValues({ examTitle, totalTimeInMinute, questions })
   }
 
+  const handleGetResults = async (id: any) => {
+    setResDialogOpen(true);
+    const currRes = await getExamResultByExamId(id);
+    setCurrExamRes(currRes)
+  }
+
   const handleDelete = async (id: any) => {
     setDeleteId(id);
     handleDeleteExam();
@@ -115,10 +123,18 @@ export const ManagedExams = () => {
           width: '100%',
         }}
       >
+        <Tooltip title='Do exam'>
+          <a target="_blank" href={`http://localhost:8082/${id}`}>
+            <Button sx={{ lineHeight: '0' }}>
+              <PlayArrowIcon color="success" />
+            </Button>
+          </a>
+        </Tooltip>
+
         <Tooltip title='See all results of this exam'>
           <span>
-            <Button sx={{ lineHeight: '0' }} onClick={() => handleEdit(id)}>
-              <ListAltIcon color="success" />
+            <Button sx={{ lineHeight: '0' }} onClick={() => handleGetResults(id)}>
+              <ListAltIcon color="warning" />
             </Button>
           </span>
         </Tooltip>
@@ -152,7 +168,7 @@ export const ManagedExams = () => {
     {
       field: "examTitle",
       headerName: "Exam",
-      flex: 4,
+      flex: 5,
       filterable: false,
       renderCell: (params: GridRenderCellParams) => {
         return (
@@ -169,7 +185,7 @@ export const ManagedExams = () => {
     {
       field: "questions",
       headerName: "Questions",
-      flex: 3,
+      flex: 4,
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams) => {
@@ -199,7 +215,7 @@ export const ManagedExams = () => {
     {
       field: "creator",
       headerName: "Author",
-      flex: 3,
+      flex: 4,
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams) => {
@@ -217,7 +233,7 @@ export const ManagedExams = () => {
     {
       field: "date",
       headerName: "Date",
-      flex: 3,
+      flex: 4,
       sortable: false,
       filterable: false,
       renderCell: (params: GridRenderCellParams) => {
@@ -247,7 +263,7 @@ export const ManagedExams = () => {
     {
       field: '_id',
       headerName: 'Actions',
-      flex: 2,
+      flex: 4,
       headerAlign: 'center',
       align: 'center',
       sortable: false,
@@ -365,6 +381,10 @@ export const ManagedExams = () => {
     setDeleteId("")
   };
 
+  const handleCloseResDialog = () => {
+    setResDialogOpen(false);
+  };
+
   const editExam = async (id: any) => {
     await updateExamById(id, examEdited);
     setEditDialogOpen(false);
@@ -416,8 +436,61 @@ export const ManagedExams = () => {
     setAddedQuestionPoint(0)
   };
 
+  function formatDate(dateString: string): string {
+    const date = new Date(dateString);
+
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const seconds = date.getSeconds();
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
+    const year = date.getFullYear();
+
+    const pad = (num: number): string => num.toString().padStart(2, '0');
+
+    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)} ${pad(day)}/${pad(month)}/${year}`;
+  }
+
   return (
     <div>
+      {/* Exam Result */}
+      <Dialog
+        fullScreen={fullScreen}
+        open={resDialogOpen}
+        onClose={handleCloseResDialog}
+        aria-labelledby="responsive-dialog-title"
+      >
+        <DialogTitle id="responsive-dialog-title">
+          {"Exam Result"}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {
+              currExamRes?.docs.length > 0 && currExamRes?.docs.map((res: any) => {
+                return <Box sx={{ color: "#000", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                  <div style={{ display: "flex" }}>
+                    <Avatar />
+                    <div style={{ paddingLeft: "10px" }}>
+                      <div>{res.candidate.fullName}</div>
+                      <div style={{ fontSize: "12px" }}>{res.candidate.username}</div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: "14px" }}>
+                    Score: <br />
+                    {res.score}/{res.examId.questions.reduce((total: any, curr: any) => total + curr.point, 0)}
+                  </div>
+                  <div style={{ color: "grey", fontSize: "14px" }}>
+                    Start time: {formatDate(res.startTime)}
+                    <br />
+                    End time: &nbsp;&nbsp;{formatDate(res.endTime)}
+                  </div>
+                </Box>
+              })
+            }
+          </DialogContentText>
+        </DialogContent>
+      </Dialog>
+
       {/* Confirm delete */}
       <Dialog
         fullScreen={fullScreen}
